@@ -1,9 +1,10 @@
 import { useReserva } from "../hooks/useLAB";
 import React, { useState } from 'react';
 import { FaCheck } from "react-icons/fa";
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
-import { es } from 'date-fns/locale';
+import { LuArrowBigRightDash, LuArrowBigLeftDash } from "react-icons/lu";
+import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
+import ReactCalendar from 'react-calendar';
+import '../index.css';
 
 export const UI = ({ hidden, ...props }) => {
   const [role, setRole] = useState('ALUMNO');
@@ -12,6 +13,8 @@ export const UI = ({ hidden, ...props }) => {
   const [matriculaValid, setMatriculaValid] = useState(false);
   const [matriculaError, setMatriculaError] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [count, setCount] = useState(0);
 
   const handleDropdownChange = (e) => {
     setRole(e.target.value);
@@ -27,6 +30,25 @@ export const UI = ({ hidden, ...props }) => {
       setMatriculaValid(true);
     }
   }
+
+  const questions = [
+    'Elige la fecha',
+    'Elige el horario',
+    '¿Cuantas personas?',
+    '¿Necesitas algo de lo siguiente?'
+  ];
+
+  const handleNext = () => {
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
+    }
+  };
 
   return (
     <>
@@ -124,7 +146,7 @@ export const UI = ({ hidden, ...props }) => {
                     }}
                   />
                   <button
-                    className="bg-blue-500 hover:bg-blue-600 text-white w-14 h-14 flex items-center justify-center"
+                    className="bg-blue-500 hover:bg-blue-600 text-white w-14 h-full flex items-center justify-center"
                   >
                     <FaCheck />
                   </button>
@@ -146,11 +168,11 @@ export const UI = ({ hidden, ...props }) => {
                     <span className="text-2xl uppercase">{selectedDate.toLocaleString('es', { month: 'long' })}</span>
                   </div>
                   <div className="h-2/6 w-10/12">
-                    <span className="flex h-1/5 items-center text-lg underline uppercase">Especificaciones :</span>
+                    <span className="flex h-1/5 items-center text-lg underline uppercase font-bold">Especificaciones :</span>
                     <div className="flex flex-col justify-center h-3/5">
                       <ul className="list-disc list-inside">
                         <li>Info sala reservada</li>
-                        <li>Numero de personas</li>
+                        <li>{count} {count === 1 ? 'persona' : 'personas'}</li>
                         <li>Horario</li>
                       </ul>
                     </div>
@@ -162,14 +184,78 @@ export const UI = ({ hidden, ...props }) => {
               )}
             </div>
             <div className="border border-blue-800 flex flex-col items-center justify-center w-8/12 h-5/6 bg-opacity-50 bg-white backdrop-blur-md">
-              <h1 className="text-4xl font-bold mb-4">Que dia quieres reservar?</h1>
-              <DatePicker
-                selected={selectedDate}
-                onChange={(date) => setSelectedDate(date)}
-                inline
-                className="bg-blue-100 text-blue-500 border-blue-500 rounded-lg"
-                locale={es}
-              />
+              <div className="w-full h-1/6 flex items-center justify-around">
+                <button onClick={handlePrevious} className="h-fullw-1/12 text-blue-500 hover:text-blue-600 text-6xl">
+                  <LuArrowBigLeftDash />
+                </button>
+                <h1 className="text-3xl font-bold h-4/6 w-9/12 flex items-center justify-center">
+                  {questions[currentQuestionIndex]}
+                </h1>
+                <button onClick={handleNext} className="h-full w-1/12 text-blue-500 hover:text-blue-600 text-6xl">
+                  <LuArrowBigRightDash />
+                </button>
+              </div>
+              <div className="w-full h-full">
+                {(() => {
+                  switch (questions[currentQuestionIndex]) {
+                    case 'Elige la fecha':
+                      return (
+                        <ReactCalendar
+                          className="react-calendar"
+                          locale="es-ES"
+                          minDate={new Date()}
+                          onChange={setSelectedDate}
+                          value={selectedDate}
+                          formatShortWeekday={(locale, date) => {
+                            let weekday = date.toLocaleString(locale, { weekday: 'long' });
+                            weekday = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+                            return weekday;
+                          }}
+                          formatMonthYear={(locale, date) => {
+                            let monthYear = date.toLocaleString(locale, { month: 'long', year: 'numeric' });
+                            monthYear = monthYear.charAt(0).toUpperCase() + monthYear.slice(1);
+                            return monthYear;
+                          }}
+                        />
+                      );
+                    case 'Elige el horario':
+                      return (
+                        <div>
+                          <p>Horarios disponibles</p>
+                        </div>
+                      );
+                    case '¿Cuantas personas?':
+                      return (
+                        <div className="flex w-full h-full items-center justify-center">
+                          <button 
+                            className="text-7xl" 
+                            onClick={() => count < 10 ? setCount(count + 1) : null}
+                          >
+                            <IoIosArrowUp/> 
+                          </button>
+                          <input
+                            className="w-4/12 h-2/6 flex text-center text-7xl bg-transparent border-t-8 border-b-8 border-black"
+                            type="text" 
+                            value={count} 
+                            readOnly
+                          />
+                          <button 
+                            className="text-7xl" 
+                            onClick={() => count > 1 ? setCount(count - 1) : null}
+                          >
+                            <IoIosArrowDown/> 
+                          </button>
+                        </div>
+                      );
+                    case '¿Necesitas algo de lo siguiente?':
+                      return (
+                        <div>
+                          <p>Equipos</p>
+                        </div>
+                      );
+                  }
+                })()}
+              </div>
             </div>
           </div>
         )}
