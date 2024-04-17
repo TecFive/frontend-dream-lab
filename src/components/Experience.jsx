@@ -5,11 +5,11 @@ import {
   Text,
 } from "@react-three/drei";
 import { Suspense, useEffect, useRef, useState } from "react";
-import { useChat } from "../hooks/useChat";
+import { useReserva } from "../hooks/useLAB";
 import { Avatar } from "./Avatar";
 
 const Dots = (props) => {
-  const { loading } = useChat();
+  const { loading } = useReserva();
   const [loadingText, setLoadingText] = useState("");
   useEffect(() => {
     if (loading) {
@@ -39,7 +39,7 @@ const Dots = (props) => {
 
 export const Experience = () => {
   const cameraControls = useRef();
-  const { cameraZoomed } = useChat();
+  const { cameraZoomed } = useReserva();
 
   useEffect(() => {
     cameraControls.current.setLookAt(0, 2, 5, 0, 1.5, 0);
@@ -47,9 +47,9 @@ export const Experience = () => {
 
   useEffect(() => {
     if (cameraZoomed) {
-      cameraControls.current.setLookAt(-0.3, 1.5, 1.5, 0.3, 1.5, 0, true);
+      cameraControls.current.setLookAt(-0.3, 1.5, 1.5, 0.45, 1.5, 0, true);
     } else {
-      cameraControls.current.setLookAt(-1, 1.8, 4, 1, 1, 0, true);
+      cameraControls.current.setLookAt(-1, 1.8, 4, 1.3, 0.9, 0, true);
     }
   }, [cameraZoomed]);
   return (

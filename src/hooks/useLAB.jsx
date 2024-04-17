@@ -2,9 +2,9 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 const backendUrl = "http://localhost:3000";
 
-const ChatContext = createContext();
+const ReservaContext = createContext();
 
-export const ChatProvider = ({ children }) => {
+export const ReservaProvider = ({ children }) => {
   const chat = async (message) => {
     setLoading(true);
     const data = await fetch(`${backendUrl}/chat`, {
@@ -35,7 +35,7 @@ export const ChatProvider = ({ children }) => {
   }, [messages]);
 
   return (
-    <ChatContext.Provider
+    <ReservaContext.Provider
       value={{
         chat,
         message,
@@ -46,14 +46,14 @@ export const ChatProvider = ({ children }) => {
       }}
     >
       {children}
-    </ChatContext.Provider>
+    </ReservaContext.Provider>
   );
 };
 
-export const useChat = () => {
-  const context = useContext(ChatContext);
+export const useReserva = () => {
+  const context = useContext(ReservaContext);
   if (!context) {
-    throw new Error("useChat must be used within a ChatProvider");
+    throw new Error("Error en el hook useReserva");
   }
   return context;
 };

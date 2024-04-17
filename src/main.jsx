@@ -1,13 +1,13 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import { ChatProvider } from "./hooks/useChat";
+import { ReservaProvider } from "./hooks/useLAB";
 import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <ChatProvider>
+    <ReservaProvider>
       <App />
-    </ChatProvider>
+    </ReservaProvider>
   </React.StrictMode>
 );

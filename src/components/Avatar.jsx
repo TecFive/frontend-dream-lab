@@ -9,7 +9,7 @@ import { button, useControls } from "leva";
 import React, { useEffect, useRef, useState } from "react";
 
 import * as THREE from "three";
-import { useChat } from "../hooks/useChat";
+import { useReserva } from "../hooks/useLAB";
 
 const facialExpressions = {
   smile: {
@@ -42,7 +42,7 @@ export function Avatar(props) {
     "/models/65f47f1be47ed7cab59c1152.glb"
   );
 
-  const { message, onMessagePlayed, chat } = useChat();
+  const { message, onMessagePlayed, chat } = useReserva();
 
   const [lipsync, setLipsync] = useState();
 
