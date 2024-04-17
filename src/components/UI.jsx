@@ -248,7 +248,7 @@ export const UI = ({ hidden, ...props }) => {
                     </span>
                   </div>
                   <div className="h-2/6 w-10/12">
-                    <span className="flex h-1/5 items-center text-lg underline uppercase font-bold">
+                    <span className="flex h-1/5 items-center text-base underline uppercase font-bold">
                       Especificaciones :
                     </span>
                     <div className="flex flex-col justify-center h-3/5">
