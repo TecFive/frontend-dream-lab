@@ -5,6 +5,12 @@ import { LuArrowBigRightDash, LuArrowBigLeftDash } from "react-icons/lu";
 import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
 import ReactCalendar from "react-calendar";
 import "../index.css";
+import lab3d from "../assets/3dLab.png";
+import labCompu from "../assets/compuLab.jpeg";
+import labElectro from "../assets/electroLab.jpeg";
+import labIos from "../assets/iosLab.jpeg";
+import labServer from "../assets/serverlab.jpeg";
+import labVr from "../assets/vrLab.jpeg";
 
 export const UI = ({ hidden, ...props }) => {
   const [role, setRole] = useState("ALUMNO");
@@ -15,9 +21,19 @@ export const UI = ({ hidden, ...props }) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [count, setCount] = useState(0);
-  const [selectedTime, setSelectedTime] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
+  const images = [lab3d, labCompu, labElectro, labIos, labServer, labVr];
+  const [selectedCard, setSelectedCard] = useState(null);
+
+  const cardNames = [
+    "Laboratorio de Impresion 3D",
+    "Laboratorio de programacion",
+    "Laboratorio de Electronica",
+    "Laboratorio de iOS",
+    "Laboratorio de Servidores",
+    "Laboratorio de VR"
+  ];
 
   const handleDropdownChange = (e) => {
     setRole(e.target.value);
@@ -38,7 +54,7 @@ export const UI = ({ hidden, ...props }) => {
     "Elige la fecha",
     "Elige el horario",
     "¿Cuantas personas?",
-    "¿Necesitas algo de lo siguiente?",
+    "Laboratorios",
   ];
 
   const handleNext = () => {
@@ -237,7 +253,7 @@ export const UI = ({ hidden, ...props }) => {
                     </span>
                     <div className="flex flex-col justify-center h-3/5">
                       <ul className="list-disc list-inside">
-                        <li>Info sala reservada</li>
+                        <li>{cardNames[selectedCard]}</li>
                         <li>
                           {count} {count === 1 ? "persona" : "personas"}
                         </li>
@@ -255,7 +271,7 @@ export const UI = ({ hidden, ...props }) => {
               <div className="w-full h-1/6 flex items-center justify-around">
                 <button
                   onClick={handlePrevious}
-                  className="h-fullw-1/12 text-blue-500 hover:text-blue-600 text-6xl"
+                  className={`h-fullw-1/12 text-6xl ${currentQuestionIndex > 0 ? "text-blue-500 hover:text-blue-600" : "text-gray-500"}`}
                 >
                   <LuArrowBigLeftDash />
                 </button>
@@ -264,7 +280,7 @@ export const UI = ({ hidden, ...props }) => {
                 </h1>
                 <button
                   onClick={handleNext}
-                  className="h-full w-1/12 text-blue-500 hover:text-blue-600 text-6xl"
+                  className={`h-full w-1/12 text-6xl ${currentQuestionIndex < questions.length - 1 ? "text-blue-500 hover:text-blue-600" : "text-gray-500"}`}
                 >
                   <LuArrowBigRightDash />
                 </button>
@@ -356,10 +372,19 @@ export const UI = ({ hidden, ...props }) => {
                           </button>
                         </div>
                       );
-                    case "¿Necesitas algo de lo siguiente?":
+                    case "Laboratorios":
                       return (
-                        <div>
-                          <p>Equipos</p>
+                        <div className="w-11/12 h-5/6 grid grid-cols-2 gap-4">
+                          {images.map((image, index) => (
+                            <div 
+                              key={index} 
+                              className="relative bg-cover bg-center text-center flex w-auto h-auto items-center justify-center" 
+                              style={{backgroundImage: `url(${image})`}}
+                              onClick={() => setSelectedCard(selectedCard === index ? null : index)}
+                            >
+                              {selectedCard === index && <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75">{cardNames[index]}</div>}
+                            </div>
+                          ))}
                         </div>
                       );
                   }
