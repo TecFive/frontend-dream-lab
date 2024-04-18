@@ -17,3 +17,41 @@ body {
   background-color: #96b4eb;
   background-image: linear-gradient(19deg, #96b4eb 0%, #ffffff 100%);
 }
+
+.ReservationCard {
+  border: 1px solid hsl(0, 0%, 85%);
+  border-radius: 12px;
+  box-shadow: 5px 5px 5px hsla(0, 0%, 0%, 0.049);
+  padding: 20px;
+  margin: 10px;
+  text-align: center;
+  width: 600px;
+  display: inline-flex;
+}
+
+.ReservationCardImage{
+  width: 40%;
+  height: 95%;
+  display: flex;
+  margin-right: 6px;
+  border-radius: 10px;
+}
+
+.ReservationCardText{
+  text-align: left;
+  font-size: large;
+  font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+}
+
+.ReservationCardbutton {
+  display: inline-block;
+  padding: 10px 20px; /* Adjust padding as needed */
+  margin: auto 3px;
+  border: 2px solid #333; /* Border color */
+  border-radius: 10px; /* Rounded edges */
+  background-color: transparent; /* Transparent background */
+  color: #333; /* Text color */
+  text-decoration: none; /* Remove underline for anchor tag */
+  cursor: pointer; /* Show pointer cursor on hover */
+  transition: all 0.3s ease; /* Smooth transition for hover effect */
+}
