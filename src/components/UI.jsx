@@ -25,6 +25,7 @@ export const UI = ({ hidden, ...props }) => {
   const [endTime, setEndTime] = useState("");
   const images = [lab3d, labCompu, labElectro, labIos, labServer, labVr];
   const [selectedCard, setSelectedCard] = useState(null);
+  const [hoverIndex, setHoverIndex] = React.useState(null);
 
   const cardNames = [
     "Laboratorio de Impresion 3D",
@@ -51,22 +52,14 @@ export const UI = ({ hidden, ...props }) => {
   };
 
   const questions = [
-    "Elige la fecha",
-    "Elige el horario",
-    "¿Cuantas personas?",
+    "Fecha",
+    "Horario",
+    "Aforo",
     "Laboratorios",
   ];
 
-  const handleNext = () => {
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
-    }
+  const handleQuestionClick = (index) => {
+    setCurrentQuestionIndex(index);
   };
 
   const times = [];
@@ -117,6 +110,14 @@ export const UI = ({ hidden, ...props }) => {
     return `${newHour < 10 ? "0" + newHour : newHour}:${
       newMinutes < 10 ? "0" + newMinutes : newMinutes
     }`;
+  };
+
+  const handleMouseEnter = (index) => {
+    setHoverIndex(index);
+  };
+  
+  const handleMouseLeave = () => {
+    setHoverIndex(null);
   };
 
   return (
@@ -253,11 +254,11 @@ export const UI = ({ hidden, ...props }) => {
                     </span>
                     <div className="flex flex-col justify-center h-3/5">
                       <ul className="list-disc list-inside">
-                        <li>{cardNames[selectedCard]}</li>
+                        <li>{cardNames[selectedCard] ? cardNames[selectedCard] : "Ninguna sala seleccionada"}</li>
                         <li>
                           {count} {count === 1 ? "persona" : "personas"}
                         </li>
-                        <li>{startTime && ` ${startTime}`} {endTime && `- ${endTime}`}</li>
+                        <li>{startTime || endTime ? `${startTime ? ` ${startTime}` : ""} ${endTime ? `- ${endTime}` : ""}` : "Sin horario"}</li>
                       </ul>
                     </div>
                   </div>
@@ -268,27 +269,10 @@ export const UI = ({ hidden, ...props }) => {
               )}
             </div>
             <div className="border border-blue-800 flex flex-col items-center justify-center w-8/12 h-5/6 bg-opacity-50 bg-white backdrop-blur-md">
-              <div className="w-full h-1/6 flex items-center justify-around">
-                <button
-                  onClick={handlePrevious}
-                  className={`h-fullw-1/12 text-6xl ${currentQuestionIndex > 0 ? "text-blue-500 hover:text-blue-600" : "text-gray-500"}`}
-                >
-                  <LuArrowBigLeftDash />
-                </button>
-                <h1 className="text-3xl font-bold h-4/6 w-9/12 flex items-center justify-center">
-                  {questions[currentQuestionIndex]}
-                </h1>
-                <button
-                  onClick={handleNext}
-                  className={`h-full w-1/12 text-6xl ${currentQuestionIndex < questions.length - 1 ? "text-blue-500 hover:text-blue-600" : "text-gray-500"}`}
-                >
-                  <LuArrowBigRightDash />
-                </button>
-              </div>
               <div className="w-full h-full flex justify-center items-center">
                 {(() => {
                   switch (questions[currentQuestionIndex]) {
-                    case "Elige la fecha":
+                    case "Fecha":
                       return (
                         <ReactCalendar
                           className="react-calendar"
@@ -317,7 +301,7 @@ export const UI = ({ hidden, ...props }) => {
                           }}
                         />
                       );
-                    case "Elige el horario":
+                    case "Horario":
                       return (
                         <div className="w-11/12 h-5/6 grid grid-cols-4 gap-2">
                           {times.map((time, index) => (
@@ -345,7 +329,7 @@ export const UI = ({ hidden, ...props }) => {
                           ))}
                         </div>
                       );
-                    case "¿Cuantas personas?":
+                    case "Aforo":
                       return (
                         <div className="flex w-full h-full items-center justify-center">
                           <button
@@ -389,6 +373,22 @@ export const UI = ({ hidden, ...props }) => {
                       );
                   }
                 })()}
+              </div>
+              <div className="w-full h-1/6 flex items-center justify-center space-x-4">
+                {questions.map((question, index) => (
+                  <React.Fragment key={index}>
+                    {index !== 0 && <span className="text-gray-500">•</span>}
+                    <button
+                      onMouseEnter={() => handleMouseEnter(index)}
+                      onMouseLeave={handleMouseLeave}
+                      onClick={() => handleQuestionClick(index)}
+                      className={`relative text-xl h-4/6 w-auto flex items-center justify-center ${currentQuestionIndex === index ? "text-blue-500" : "text-gray-500"} ${hoverIndex === index ? "hovered" : ""}`}
+                    >
+                      {question}
+                      {currentQuestionIndex === index && <span className="absolute top-0 left-1/2 transform -translate-x-1/2 -mt-2 active-arrow">▼</span>}
+                    </button>
+                  </React.Fragment>
+                ))}
               </div>
             </div>
           </div>
