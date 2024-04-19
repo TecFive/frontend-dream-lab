@@ -25,12 +25,12 @@ body {
   padding: 20px;
   margin: 10px;
   text-align: center;
-  width: 600px;
+  width: 98%;
   display: inline-flex;
 }
 
 .ReservationCardImage{
-  width: 40%;
+  width: 20%;
   height: 95%;
   display: flex;
   margin-right: 6px;
@@ -47,11 +47,46 @@ body {
   display: inline-block;
   padding: 10px 20px; /* Adjust padding as needed */
   margin: auto 3px;
-  border: 2px solid #333; /* Border color */
+  border: none; /* Remove border */
   border-radius: 10px; /* Rounded edges */
-  background-color: transparent; /* Transparent background */
+  background-color: rgba(255, 255, 255, 0.2); /* Semi-transparent white background */
   color: #333; /* Text color */
   text-decoration: none; /* Remove underline for anchor tag */
   cursor: pointer; /* Show pointer cursor on hover */
   transition: all 0.3s ease; /* Smooth transition for hover effect */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08); /* Shadow for glassy effect */
+}
+
+.ReservationCardbutton:hover {
+  background-color: rgba(255, 255, 255, 0.3); /* Lighten background color on hover */
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1); /* Adjust shadow on hover */
+}
+
+.modalWindowStyle{
+  background-color: rgba(255, 255, 255, 0.2);
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0px 4px 6px rgba(0,0,0,0.1);
+  width: 300px;
+  text-align:center;
+}
+
+.confirmCancelButton{
+  display: inline-block;
+  padding: 10px 20px; /* Adjust padding as needed */
+  margin: auto 3px;
+  border: none; /* Remove border */
+  border-radius: 10px; /* Rounded edges */
+  background-color: rgba(255, 255, 255, 0.2) ; /* Semi-transparent white background */
+  color: #333; /* Text color */
+  text-decoration: none; /* Remove underline for anchor tag */
+  cursor: pointer; /* Show pointer cursor on hover */
+  transition: all 0.3s ease; /* Smooth transition for hover effect */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.confirmCancelButton:hover {
+  background-color: #ff4137;
+  opacity: 0.5;
+  color: #ffffff; /* Lighten background color on hover */
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1); /* Adjust shadow on hover */
 }

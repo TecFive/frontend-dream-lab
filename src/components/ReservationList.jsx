@@ -1,8 +1,38 @@
 import { useState, useEffect } from "react";
+import CancelPopUp from "./CancelPopUp";
 const login_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2MWQ3NmNkZmM2Y2RhNmQ1MGNmMDQ3MiIsIm5hbWUiOiJQQVRSSUNJTyBWSUxMQVJSRUFMIiwiZW1haWwiOiJBMDA4MzQ1MjZAVEVDLk1YIiwiY2FyZWVyIjoiSVRDIiwic2VtZXN0ZXIiOjYsInJvbGUiOiI2NjE0YWY5YTZkMjk0ZjVkNDQwMDg2YTEiLCJleHAiOjE3MjEyNDMzOTN9.ezghdqSwwEstALHtv048X7N9cRlApaugMxhW43ZlVWE';
 
-function ReservationCard(props){
+async function cancelReservation(id) {
+    const requestOptions = {
+        method: 'DELETE',
+        headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer ' + login_token
+        }
+    };
 
+    const cancelIt = async () => {
+        try {
+            const response = await fetch('https://dream-lab-backend.azurewebsites.net/v1/reservations/' + id, requestOptions);
+            
+            if (!response.ok) {
+                throw new Error('Failed to cancel reservation');
+            }
+
+            const jsonData = await response.json();
+            console.log(jsonData);
+            
+        } catch (error) {
+            console.error('Error canceling reservation:', error);
+        }
+    };
+
+    await cancelIt();
+}
+
+
+function ReservationCard(props){
+    const [cancel,setCancel] = useState(false);
     /*function EquipoNameFetcher(id_equipo){
 
 
@@ -17,7 +47,12 @@ function ReservationCard(props){
             <p><strong>Horario de Fin:</strong> {props.horafin}</p>
             <p><strong>Equipo Requerido:</strong> {props.equipo}</p>
             <button className="ReservationCardbutton">Modificar</button>
-            <button className="ReservationCardbutton">Cancelar</button>
+            <button className="ReservationCardbutton" onClick={()=>{
+                setCancel(true)
+            }}>Cancelar</button>
+            <CancelPopUp isShowing={cancel} onCancel={() =>{setCancel(false)}} onConfirm={()=>{cancelReservation(props.id)
+                setCancel(false)
+            }}/>
         </div>
     </div>
     );
@@ -41,7 +76,6 @@ function ReservationList(){
         const requestOptions = {
             method: 'GET',
             headers: {
-                'Accept': 'application/json',
                 'Authorization': 'Bearer ' + login_token
             },
         };
@@ -74,7 +108,8 @@ function ReservationList(){
     function reservationCardCreator(reservation, index) {
         return (
             <ReservationCard
-                key={index} 
+                key={index}
+                id= {reservation.id}
                 imgurl={reservation.imgurl}
                 sala={reservation.sala}
                 horainicio={reservation.horainicio}
