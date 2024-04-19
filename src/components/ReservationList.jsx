@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import CancelPopUp from "./CancelPopUp";
+import ModifyPopUp from "./ModifyPopUp";
 const login_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2MWQ3NmNkZmM2Y2RhNmQ1MGNmMDQ3MiIsIm5hbWUiOiJQQVRSSUNJTyBWSUxMQVJSRUFMIiwiZW1haWwiOiJBMDA4MzQ1MjZAVEVDLk1YIiwiY2FyZWVyIjoiSVRDIiwic2VtZXN0ZXIiOjYsInJvbGUiOiI2NjE0YWY5YTZkMjk0ZjVkNDQwMDg2YTEiLCJleHAiOjE3MjEyNDMzOTN9.ezghdqSwwEstALHtv048X7N9cRlApaugMxhW43ZlVWE';
 
 async function cancelReservation(id) {
@@ -30,9 +31,17 @@ async function cancelReservation(id) {
     await cancelIt();
 }
 
+async function modifyReservation(id) {
+    try {
+        window.location.reload();
+    } catch (error) {
+        console.error('Error modifying reservation:', error);
+    }
+}
 
 function ReservationCard(props){
     const [cancel,setCancel] = useState(false);
+    const [modify,setModify] = useState(false);
     /*function EquipoNameFetcher(id_equipo){
 
 
@@ -46,7 +55,12 @@ function ReservationCard(props){
             <p><strong>Horario de Inicio:</strong> {props.horainicio}</p>
             <p><strong>Horario de Fin:</strong> {props.horafin}</p>
             <p><strong>Equipo Requerido:</strong> {props.equipo}</p>
-            <button className="ReservationCardbutton">Modificar</button>
+            <button className="ReservationCardbutton" onClick={()=>{
+                setModify(true)
+            }}>Modificar</button>
+            <ModifyPopUp isShowing={modify} onCancel={() =>{setModify(false)}} onConfirm={()=>{modifyReservation(props.id)
+                setModify(false)
+            }}/>
             <button className="ReservationCardbutton" onClick={()=>{
                 setCancel(true)
             }}>Cancelar</button>

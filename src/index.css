@@ -90,3 +90,23 @@ body {
   color: #ffffff; /* Lighten background color on hover */
   box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1); /* Adjust shadow on hover */
 }
+
+.confirmModifyButton{
+  display: inline-block;
+  padding: 10px 20px; /* Adjust padding as needed */
+  margin: auto 3px;
+  border: none; /* Remove border */
+  border-radius: 10px; /* Rounded edges */
+  background-color: rgba(255, 255, 255, 0.2) ; /* Semi-transparent white background */
+  color: #333; /* Text color */
+  text-decoration: none; /* Remove underline for anchor tag */
+  cursor: pointer; /* Show pointer cursor on hover */
+  transition: all 0.3s ease; /* Smooth transition for hover effect */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.confirmModifyButton:hover {
+  background-color: #3755ff;
+  opacity: 0.5;
+  color: #ffffff; /* Lighten background color on hover */
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1); /* Adjust shadow on hover */
+}
