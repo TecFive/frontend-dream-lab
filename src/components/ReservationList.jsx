@@ -1,9 +1,32 @@
 import { useState, useEffect } from "react";
 import CancelPopUp from "./CancelPopUp";
 import ModifyPopUp from "./ModifyPopUp";
-const login_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2MWQ3NmNkZmM2Y2RhNmQ1MGNmMDQ3MiIsIm5hbWUiOiJQQVRSSUNJTyBWSUxMQVJSRUFMIiwiZW1haWwiOiJBMDA4MzQ1MjZAVEVDLk1YIiwiY2FyZWVyIjoiSVRDIiwic2VtZXN0ZXIiOjYsInJvbGUiOiI2NjE0YWY5YTZkMjk0ZjVkNDQwMDg2YTEiLCJleHAiOjE3MjEzMjYzNjV9.hpah2e_4tJMDmUMOuhCkPd--63OjMDNPAnnAf8d3vyQ';
+const login_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2MWQ3NmNkZmM2Y2RhNmQ1MGNmMDQ3MiIsIm5hbWUiOiJQQVRSSUNJTyBWSUxMQVJSRUFMIiwiZW1haWwiOiJBMDA4MzQ1MjZAVEVDLk1YIiwiY2FyZWVyIjoiSVRDIiwic2VtZXN0ZXIiOjYsInJvbGUiOiI2NjE0YWY5YTZkMjk0ZjVkNDQwMDg2YTEiLCJleHAiOjE3MjEzMzE0NzV9.BXnj6E38N1a4og7s_GEK1cgrEfJl35gBkXm-HJ2_Hb0';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import {faPersonShelter, faHourglassStart, faHourglassEnd, faComputer, faPen,faBan} from '@fortawesome/free-solid-svg-icons'
+import {faPersonShelter, faHourglassStart, faHourglassEnd, faComputer, faPen,faBan,faCalendar} from '@fortawesome/free-solid-svg-icons'
+
+function parseTime(timestamp){
+    const dateTime = new Date(timestamp);
+
+    const hours = String(dateTime.getHours()).padStart(2,'0')
+    const minutes = String(dateTime.getMinutes()).padStart(2,"0")
+
+    const formatted_time = `${hours}:${minutes}`; 
+
+    return formatted_time
+}
+
+function parseDate(timestamp) {
+    const dateTime = new Date(timestamp);
+
+    const day = String(dateTime.getDate()).padStart(2, '0');
+    const month = String(dateTime.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+    const year = dateTime.getFullYear();
+
+    const formattedDate = `${day}/${month}/${year}`;
+
+    return formattedDate
+}
 
 async function cancelReservation(id) {
     const requestOptions = {
@@ -54,8 +77,9 @@ function ReservationCard(props){
         <img className= "ReservationCardImage" src={props.imgurl} alt="Sala reservada"></img>
         <div className="ReservationCardText">
             <h2><strong ><FontAwesomeIcon icon={faPersonShelter} /> Sala:</strong> {props.sala}</h2>
-            <p><strong><FontAwesomeIcon icon={faHourglassStart} /> Horario de Inicio:</strong> {props.horainicio}</p>
-            <p><strong><FontAwesomeIcon icon={faHourglassEnd} /> Horario de Fin:</strong> {props.horafin}</p>
+            <h2><strong ><FontAwesomeIcon icon={faCalendar} /> Día:</strong> {parseDate(props.horainicio)}</h2>
+            <p><strong><FontAwesomeIcon icon={faHourglassStart} /> Horario de Inicio:</strong> {parseTime(props.horainicio)}</p>
+            <p><strong><FontAwesomeIcon icon={faHourglassEnd} /> Horario de Fin:</strong> {parseTime(props.horafin)}</p>
             <p><strong><FontAwesomeIcon icon={faComputer} /> Equipo Requerido:</strong> {props.equipo}</p>
             <button className="confirmModifyButton" onClick={()=>{
                 setModify(true)
