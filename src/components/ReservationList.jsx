@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import CancelPopUp from "./CancelPopUp";
 import ModifyPopUp from "./ModifyPopUp";
-const login_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2MWQ3NmNkZmM2Y2RhNmQ1MGNmMDQ3MiIsIm5hbWUiOiJQQVRSSUNJTyBWSUxMQVJSRUFMIiwiZW1haWwiOiJBMDA4MzQ1MjZAVEVDLk1YIiwiY2FyZWVyIjoiSVRDIiwic2VtZXN0ZXIiOjYsInJvbGUiOiI2NjE0YWY5YTZkMjk0ZjVkNDQwMDg2YTEiLCJleHAiOjE3MjEyNDMzOTN9.ezghdqSwwEstALHtv048X7N9cRlApaugMxhW43ZlVWE';
+const login_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2MWQ3NmNkZmM2Y2RhNmQ1MGNmMDQ3MiIsIm5hbWUiOiJQQVRSSUNJTyBWSUxMQVJSRUFMIiwiZW1haWwiOiJBMDA4MzQ1MjZAVEVDLk1YIiwiY2FyZWVyIjoiSVRDIiwic2VtZXN0ZXIiOjYsInJvbGUiOiI2NjE0YWY5YTZkMjk0ZjVkNDQwMDg2YTEiLCJleHAiOjE3MjEzMjA1Mjd9.xnXWxgnpENw6hYh8dZpYwae1KkYX2w9DYAYpZhAIs2Q';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {faPersonShelter, faHourglassStart, faHourglassEnd, faComputer, faPen,faBan} from '@fortawesome/free-solid-svg-icons'
 
 async function cancelReservation(id) {
     const requestOptions = {
@@ -51,19 +53,19 @@ function ReservationCard(props){
     <div className="ReservationCard">
         <img className= "ReservationCardImage" src={props.imgurl} alt="Sala reservada"></img>
         <div className="ReservationCardText">
-            <h2><strong >Sala:</strong> {props.sala}</h2>
-            <p><strong>Horario de Inicio:</strong> {props.horainicio}</p>
-            <p><strong>Horario de Fin:</strong> {props.horafin}</p>
-            <p><strong>Equipo Requerido:</strong> {props.equipo}</p>
-            <button className="ReservationCardbutton" onClick={()=>{
+            <h2><strong ><FontAwesomeIcon icon={faPersonShelter} /> Sala:</strong> {props.sala}</h2>
+            <p><strong><FontAwesomeIcon icon={faHourglassStart} /> Horario de Inicio:</strong> {props.horainicio}</p>
+            <p><strong><FontAwesomeIcon icon={faHourglassEnd} /> Horario de Fin:</strong> {props.horafin}</p>
+            <p><strong><FontAwesomeIcon icon={faComputer} /> Equipo Requerido:</strong> {props.equipo}</p>
+            <button className="confirmModifyButton" onClick={()=>{
                 setModify(true)
-            }}>Modificar</button>
+            }}><FontAwesomeIcon icon={faPen} /> Modificar</button>
             <ModifyPopUp isShowing={modify} onCancel={() =>{setModify(false)}} onConfirm={()=>{modifyReservation(props.id)
                 setModify(false)
             }}/>
-            <button className="ReservationCardbutton" onClick={()=>{
+            <button className="confirmCancelButton" onClick={()=>{
                 setCancel(true)
-            }}>Cancelar</button>
+            }}><FontAwesomeIcon icon={faBan} /> Cancelar</button>
             <CancelPopUp isShowing={cancel} onCancel={() =>{setCancel(false)}} onConfirm={()=>{cancelReservation(props.id)
                 setCancel(false)
             }}/>
@@ -105,7 +107,7 @@ function ReservationList(){
 
                 // Map JSON data to Reservation objects
                 const mappedReservations = jsonData['data'].map(row => 
-                    new Reservations(row.id, "src/components/assets/pc-room.webp", row.name, row.start_date, row.end_date, row.reserved_equipment)
+                    new Reservations(row.id, "src/components/assets/pc-room.webp", row.name, row.start_date, row.end_date, "Macbook Pro, AirPods Max, Dell Optiplex")
                 );
 
                 // Update state with reservations
