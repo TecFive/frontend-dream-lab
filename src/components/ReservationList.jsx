@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import CancelPopUp from "./CancelPopUp";
 import ModifyPopUp from "./ModifyPopUp";
-const login_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2MWQ3NmNkZmM2Y2RhNmQ1MGNmMDQ3MiIsIm5hbWUiOiJQQVRSSUNJTyBWSUxMQVJSRUFMIiwiZW1haWwiOiJBMDA4MzQ1MjZAVEVDLk1YIiwiY2FyZWVyIjoiSVRDIiwic2VtZXN0ZXIiOjYsInJvbGUiOiI2NjE0YWY5YTZkMjk0ZjVkNDQwMDg2YTEiLCJleHAiOjE3MjEzMjA1Mjd9.xnXWxgnpENw6hYh8dZpYwae1KkYX2w9DYAYpZhAIs2Q';
+const login_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2MWQ3NmNkZmM2Y2RhNmQ1MGNmMDQ3MiIsIm5hbWUiOiJQQVRSSUNJTyBWSUxMQVJSRUFMIiwiZW1haWwiOiJBMDA4MzQ1MjZAVEVDLk1YIiwiY2FyZWVyIjoiSVRDIiwic2VtZXN0ZXIiOjYsInJvbGUiOiI2NjE0YWY5YTZkMjk0ZjVkNDQwMDg2YTEiLCJleHAiOjE3MjEzMjYzNjV9.hpah2e_4tJMDmUMOuhCkPd--63OjMDNPAnnAf8d3vyQ';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {faPersonShelter, faHourglassStart, faHourglassEnd, faComputer, faPen,faBan} from '@fortawesome/free-solid-svg-icons'
 
@@ -103,12 +103,14 @@ function ReservationList(){
                     throw new Error('Failed to fetch reservations');
                 }
                 const jsonData = await response.json();
-                console.log(jsonData);
 
                 // Map JSON data to Reservation objects
-                const mappedReservations = jsonData['data'].map(row => 
-                    new Reservations(row.id, "src/components/assets/pc-room.webp", row.name, row.start_date, row.end_date, "Macbook Pro, AirPods Max, Dell Optiplex")
-                );
+                const mappedReservations = jsonData['data'].map(row => {
+                    const mappedEquipment = row.reserved_equipment.map(e => e.name);
+                    console.log(mappedEquipment);
+                    return new Reservations(row.id, "src/components/assets/pc-room.webp", row.name, row.start_date, row.end_date, mappedEquipment);
+                });
+                console.log(mappedReservations);
 
                 // Update state with reservations
                 setReservations(mappedReservations);
@@ -130,7 +132,7 @@ function ReservationList(){
                 sala={reservation.sala}
                 horainicio={reservation.horainicio}
                 horafin={reservation.horafin}
-                equipo={reservation.equipo}
+                equipo={reservation.equipo.join(', ')}
             />
         );
     }
