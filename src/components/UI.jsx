@@ -38,16 +38,15 @@ export const UI = ({ hidden, ...props }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const posterImages = [Poster1, Poster2, Poster3, Poster4, Poster5, Poster6];
   const [isScanning, setIsScanning] = useState(false);
-  const [rfidInput, setRfidInput] = useState('');
-  const [hasInput, setHasInput] = useState(false);
+  const [selected, setSelected] = useState({});
 
   const cardNames = [
-    "Laboratorio de Impresion 3D",
-    "Laboratorio de programacion",
-    "Laboratorio de Electronica",
-    "Laboratorio de iOS",
-    "Laboratorio de Servidores",
-    "Laboratorio de VR"
+    "Lego Room",
+    "VR Room",
+    "PC Room",
+    "Meeting Room",
+    "Electric Garage",
+    "PCB Factory"
   ];
 
   const handleDropdownChange = (e) => {
@@ -55,11 +54,15 @@ export const UI = ({ hidden, ...props }) => {
     setInputValue(e.target.value === "ALUMNO" ? "A0" : "L0");
   };
 
+  const toggleSelect = (item) => {
+    setSelected(prev => ({ ...prev, [item]: !prev[item] }));
+  };
+
   const questions = [
     "Fecha",
     "Horario",
-    "Aforo",
     "Laboratorios",
+    "Equipos",
   ];
 
   const handleQuestionClick = (index) => {
@@ -329,52 +332,56 @@ export const UI = ({ hidden, ...props }) => {
                             {times.map((time, index) => (
                               <button
                                 key={index}
-                                className={`p-1 ${time < currentTime
-                                  ? "bg-gray-500 text-white"
-                                  : time === startTime ||
-                                    time === endTime ||
-                                    (startTime &&
-                                      endTime &&
-                                      time > startTime &&
-                                      time < endTime)
-                                    ? "bg-blue-500 text-white"
-                                    : "bg-gray-300"
+                                className={`p-1 ${time === startTime ||
+                                  time === endTime ||
+                                  (startTime && endTime && time > startTime && time < endTime)
+                                  ? "bg-blue-500 text-white"
+                                  : "bg-gray-300"
                                   }`}
-                                onClick={() =>
-                                  time >= currentTime && selectTime(time)
-                                }
-                                disabled={time < currentTime}
+                                onClick={() => selectTime(time)}
                               >
                                 {time}
                               </button>
                             ))}
                           </div>
                         );
-                      case "Aforo":
+                      case "Equipos":
                         return (
-                          <div className="flex w-full h-full items-center justify-center">
-                            <button
-                              className="text-7xl"
-                              onClick={() =>
-                                count < 10 ? setCount(count + 1) : null
-                              }
-                            >
-                              <IoIosArrowUp />
-                            </button>
-                            <input
-                              className="w-4/12 h-2/6 flex text-center text-7xl bg-transparent border-t-8 border-b-8 border-black"
-                              type="text"
-                              value={count}
-                              readOnly
-                            />
-                            <button
-                              className="text-7xl"
-                              onClick={() =>
-                                count > 1 ? setCount(count - 1) : null
-                              }
-                            >
-                              <IoIosArrowDown />
-                            </button>
+                          <div className="w-full h-full flex flex-col items-center justify-center">
+                            <div className="flex justify-center items-center w-full h-2/6">
+                              <div className="flex justify-center items-center h-full w-4/12">
+                                <div
+                                  className={`flex justify-center items-center border border-black h-4/6 w-7/12 ${selected['LEGO'] ? 'bg-green-500' : ''}`}
+                                  onClick={() => toggleSelect('LEGO')}
+                                >
+                                  LEGO
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex justify-around items-center w-full h-2/6">
+                              <div className="flex justify-center items-center h-full w-4/12">
+                                <div className="flex justify-center items-center border border-black h-4/6 w-7/12">VR Headset</div>
+                              </div>
+                              <div className="h-full w-4/12 flex flex-col items-center justify-center p-4 rounded-lg">
+                                <p className="text-2xl font-bold mb-4">{count}</p>
+                                <div>
+                                  <button className="bg-blue-500 text-white px-4 py-2 rounded mr-2" onClick={() => count < 10 ? setCount(count + 1) : null}>+</button>
+                                  <button className="bg-red-500 text-white px-4 py-2 rounded" onClick={() => count > 0 ? setCount(count - 1) : null}>-</button>
+                                </div>
+                              </div>
+                              <div className="flex justify-center items-center h-full w-4/12">
+                                <div className="flex justify-center items-center border border-black h-4/6 w-7/12">PC</div>
+                              </div>
+                            </div>
+                            <div className="flex justify-stretch items-center w-full h-2/6">
+                              <div className="flex justify-end items-center h-full w-5/12">
+                                <div className="flex justify-center items-center border border-black h-4/6 w-6/12">Projector</div>
+                              </div>
+                              <div className="h-full w-2/12"></div>
+                              <div className="flex justify-start items-center h-full w-5/12">
+                                <div className="flex justify-center items-center border border-black h-4/6 w-6/12">Whiteboard</div>
+                              </div>
+                            </div>
                           </div>
                         );
                       case "Laboratorios":
