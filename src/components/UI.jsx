@@ -2,6 +2,7 @@ import { useReserva } from "../hooks/useLAB";
 import React, { useState, useEffect } from "react";
 import { FaCheck } from "react-icons/fa";
 import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
+import { BsUpcScan } from "react-icons/bs";
 import { MdOutlineVideoSettings } from "react-icons/md";
 import ReactCalendar from "react-calendar";
 import "../index.css";
@@ -36,6 +37,9 @@ export const UI = ({ hidden, ...props }) => {
   const [showAvatarOnly, setShowAvatarOnly] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const posterImages = [Poster1, Poster2, Poster3, Poster4, Poster5, Poster6];
+  const [isScanning, setIsScanning] = useState(false);
+  const [rfidInput, setRfidInput] = useState('');
+  const [hasInput, setHasInput] = useState(false);
 
   const cardNames = [
     "Laboratorio de Impresion 3D",
@@ -49,17 +53,6 @@ export const UI = ({ hidden, ...props }) => {
   const handleDropdownChange = (e) => {
     setRole(e.target.value);
     setInputValue(e.target.value === "ALUMNO" ? "A0" : "L0");
-  };
-
-  const handleFormSubmit = (e) => {
-    e.preventDefault();
-    if (inputValue !== "A00830223") {
-      setMatriculaError(true);
-    } else {
-      setMatriculaError(false);
-      setMatriculaValid(true);
-      setButtonVisible(false);
-    }
   };
 
   const questions = [
@@ -143,6 +136,17 @@ export const UI = ({ hidden, ...props }) => {
     };
   }, [images]);
 
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    if (inputValue !== "A00830223" && inputValue !== "0005723140") {
+      setMatriculaError(true);
+    } else {
+      setMatriculaError(false);
+      setMatriculaValid(true);
+      setButtonVisible(false);
+    }
+  };
+
   return (
     <div className="fixed top-0 left-0 right-0 bottom-0 z-10 flex justify-center w-full h-full">
       {!showAvatarOnly ? (
@@ -185,52 +189,71 @@ export const UI = ({ hidden, ...props }) => {
                 />
               </div>
               <div className="flex flex-col items-center justify-center text-xl pointer-events-auto w-4/6 h-2/6 mx-auto bg-opacity-50 bg-white backdrop-blur-md rounded-b">
-                <div className="mb-8">
-                  <label>Login para </label>
-                  <select
-                    onChange={handleDropdownChange}
-                    className="text-black bg-transparent border border-black p-1 rounded-md"
-                  >
-                    <option value="ALUMNO">Alumnos</option>
-                    <option value="DOCENTE">Docentes</option>
-                  </select>
-                </div>
-                <div className="w-2/5 flex flex-col items-center">
-                  <form
-                    onSubmit={handleFormSubmit}
-                    className="flex items-center justify-between"
-                  >
-                    <input
-                      className="placeholder:text-gray-800 placeholder:italic p-4"
-                      value={inputValue}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                        }
-                      }}
-                      onChange={(e) => {
-                        if (
-                          role === "ALUMNO" &&
-                          !e.target.value.startsWith("A0")
-                        ) {
-                          setInputValue("A0" + e.target.value.slice(2));
-                        } else if (
-                          role === "DOCENTE" &&
-                          !e.target.value.startsWith("L0")
-                        ) {
-                          setInputValue("L0" + e.target.value.slice(2));
-                        } else {
-                          setInputValue(e.target.value);
-                        }
-                      }}
-                    />
-                    <button className="bg-blue-500 hover:bg-blue-600 text-white w-14 h-full flex items-center justify-center">
-                      <FaCheck />
+                {isScanning ? (
+                  <div className="flex flex-col items-center justify-center">
+                    <p className="text-black">Escaneando</p>
+                    <div className="flex space-x-2">
+                      <div className="animate-ping h-3 w-3 bg-blue-500 rounded-full"></div>
+                      <div className="animate-ping delay-150 h-3 w-3 bg-blue-500 rounded-full"></div>
+                      <div className="animate-ping delay-300 h-3 w-3 bg-blue-500 rounded-full"></div>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="mb-8">
+                      <label>Login para </label>
+                      <select
+                        onChange={handleDropdownChange}
+                        className="text-black bg-transparent border border-black p-1 rounded-md"
+                      >
+                        <option value="ALUMNO">Alumnos</option>
+                        <option value="DOCENTE">Docentes</option>
+                      </select>
+                    </div>
+                    <div className="w-2/5 flex flex-col items-center">
+                      <form
+                        onSubmit={handleFormSubmit}
+                        className="flex items-center justify-between"
+                      >
+                        <input
+                          className="placeholder:text-gray-800 placeholder:italic p-4"
+                          value={inputValue}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                            }
+                          }}
+                          onChange={(e) => {
+                            if (
+                              role === "ALUMNO" &&
+                              !e.target.value.startsWith("A0")
+                            ) {
+                              setInputValue("A0" + e.target.value.slice(2));
+                            } else if (
+                              role === "DOCENTE" &&
+                              !e.target.value.startsWith("L0")
+                            ) {
+                              setInputValue("L0" + e.target.value.slice(2));
+                            } else {
+                              setInputValue(e.target.value);
+                            }
+                          }}
+                        />
+                        <button className="bg-blue-500 hover:bg-blue-600 text-white w-14 h-full flex items-center justify-center">
+                          <FaCheck />
+                        </button>
+                      </form>
+                      {matriculaError && (
+                        <p className="text-red-500">No existe esa matricula</p>
+                      )}
+                    </div>
+                    <button
+                      className="bg-blue-500 hover:bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center mt-5"
+                      onClick={() => setIsScanning(true)}
+                    >
+                      <BsUpcScan />
                     </button>
-                  </form>
-                  {matriculaError && (
-                    <p className="text-red-500">No existe esa matricula</p>
-                  )}
-                </div>
+                  </>
+                )}
               </div>
             </div>
           ) : (
@@ -508,18 +531,18 @@ export const UI = ({ hidden, ...props }) => {
                 zIndex: 3
               }}>
               </div>
-                <div style={{
-                  width: '100%',
-                  height: '100%',
-                  backgroundImage: `url(${posterImages[currentImageIndex]})`,
-                  backgroundSize: 'cover',
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'center',
-                  position: 'absolute',
-                  clipPath: 'polygon(15% 100%, 65% 100%, 80% 0, 30% 0)',
-                  zIndex: 4
-                }}>
-                </div>
+              <div style={{
+                width: '100%',
+                height: '100%',
+                backgroundImage: `url(${posterImages[currentImageIndex]})`,
+                backgroundSize: 'contain',
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'center',
+                position: 'absolute',
+                clipPath: 'polygon(15% 100%, 65% 100%, 80% 0, 30% 0)',
+                zIndex: 4
+              }}>
+              </div>
               <div style={{
                 width: '100%',
                 height: '100%',
