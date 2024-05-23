@@ -551,7 +551,7 @@ export const UI = ({ hidden, ...props }) => {
                   color: 'white'
                 }}>
                   <span style={{
-                    fontSize: '3vw',
+                    fontSize: '2vw',
                     color: 'white',
                     fontWeight: 'bold',
                     whiteSpace: 'nowrap'

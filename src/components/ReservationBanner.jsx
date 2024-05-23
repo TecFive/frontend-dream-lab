@@ -25,7 +25,7 @@ const ReservationBanner = () => {
         <div className="flex flex-col w-5/12 h-5/6 mr-2">
           <div className="flex items-end justify-end h-3/6">
             <span style={{
-              fontSize: '4vw',
+              fontSize: '3vw',
               color: 'white',
               fontWeight: 'bold',
               whiteSpace: 'nowrap'
@@ -33,7 +33,7 @@ const ReservationBanner = () => {
           </div>
           <div className="items-start justify-end flex h-1/6">
             <span style={{
-              fontSize: '3vw',
+              fontSize: '2vw',
               color: '#00FFF7',
               fontWeight: 'bold',
               whiteSpace: 'nowrap'
@@ -42,7 +42,7 @@ const ReservationBanner = () => {
         </div>
         <div className="border-l border-white flex flex-col items-center justify-center w-4/12 h-4/6 ml-2 mr-4">
           <label style={{
-            fontSize: '3vw',
+            fontSize: '2vw',
             fontFamily: 'Arial, sans-serif',
             color: 'white',
             whiteSpace: 'nowrap'
