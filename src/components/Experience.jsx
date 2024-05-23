@@ -49,7 +49,7 @@ export const Experience = () => {
     if (cameraZoomed) {
       cameraControls.current.setLookAt(-0.3, 1.5, 1.5, 0.45, 1.5, 0, true);
     } else {
-      cameraControls.current.setLookAt(1.4, 1.4, 1.9, -0.5, 1.9, 1.4, true);
+      cameraControls.current.setLookAt(1.4, 1.4, 1.9, -0.5, 1.9, 1.5, true);
     }
   }, [cameraZoomed]);
   return (
