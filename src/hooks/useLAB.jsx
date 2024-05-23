@@ -53,7 +53,7 @@ export const ReservaProvider = ({ children }) => {
 export const useReserva = () => {
   const context = useContext(ReservaContext);
   if (!context) {
-    throw new Error("Error en el hook useReserva");
+    throw new Error("Error en el hook");
   }
   return context;
 };

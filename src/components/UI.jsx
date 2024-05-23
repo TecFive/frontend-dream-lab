@@ -1,8 +1,9 @@
 import { useReserva } from "../hooks/useLAB";
-import React, { useState, useEffect } from "react";
-import { FaCheck } from "react-icons/fa";
-import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
-import { BsUpcScan } from "react-icons/bs";
+import React, { useRef, useState, useEffect } from "react";
+import { FaCheck, FaChalkboardTeacher } from "react-icons/fa";
+import { TbLego } from "react-icons/tb";
+import { GiLaptop } from "react-icons/gi";
+import { BsUpcScan, BsHeadsetVr, BsProjector } from "react-icons/bs";
 import { MdOutlineVideoSettings } from "react-icons/md";
 import ReactCalendar from "react-calendar";
 import "../index.css";
@@ -20,9 +21,10 @@ import Poster5 from "../assets/poster5.png";
 import Poster6 from "../assets/poster6.png";
 
 export const UI = ({ hidden, ...props }) => {
+  const input = useRef();
   const [role, setRole] = useState("ALUMNO");
   const [inputValue, setInputValue] = useState("A0");
-  const { cameraZoomed, setCameraZoomed } = useReserva();
+  const { chat, message, loading, cameraZoomed, setCameraZoomed } = useReserva();
   const [matriculaValid, setMatriculaValid] = useState(false);
   const [matriculaError, setMatriculaError] = useState(false);
   const [isButtonVisible, setButtonVisible] = useState(true);
@@ -39,6 +41,25 @@ export const UI = ({ hidden, ...props }) => {
   const posterImages = [Poster1, Poster2, Poster3, Poster4, Poster5, Poster6];
   const [isScanning, setIsScanning] = useState(false);
   const [selected, setSelected] = useState({});
+
+  const toggleSelectNew = (item) => {
+    setSelected(prev => ({ ...prev, [item]: !prev[item] }));
+  };
+
+  React.useEffect(() => {
+    if (selectedCard !== null) {
+      input.current.value = "Laboratorio " + cardNames[selectedCard];
+      sendMessage();
+      handleQuestionClick(currentQuestionIndex + 1);
+    }
+  }, [selectedCard]);
+
+  useEffect(() => {
+    if (!isButtonVisible) {
+      input.current.value = "iniciar reservacion";
+      sendMessage();
+    }
+  }, [isButtonVisible]);
 
   const cardNames = [
     "Lego Room",
@@ -78,12 +99,6 @@ export const UI = ({ hidden, ...props }) => {
     }
   }
 
-  const currentDate = new Date();
-  const currentHour = currentDate.getHours();
-  const currentMinute = currentDate.getMinutes();
-  const currentTime = `${currentHour < 10 ? "0" + currentHour : currentHour}:${currentMinute < 30 ? "00" : "30"
-    }`;
-
   const selectTime = (time) => {
     if (!startTime || (startTime && endTime)) {
       setStartTime(time);
@@ -91,6 +106,10 @@ export const UI = ({ hidden, ...props }) => {
     } else if (time > startTime && getDifferenceInHours(startTime, time) < 2) {
       const endTime = addThirtyMinutes(time);
       setEndTime(endTime);
+      const formattedTime = `${startTime} - ${endTime}`;
+      input.current.value = formattedTime;
+      sendMessage();
+      handleQuestionClick(currentQuestionIndex + 1);
     }
   };
 
@@ -150,21 +169,59 @@ export const UI = ({ hidden, ...props }) => {
     }
   };
 
+  const sendMessage = () => {
+    const text = input.current.value;
+    if (!loading && !message) {
+      chat(text);
+      input.current.value = "";
+    }
+  };
+  if (hidden) {
+    return null;
+  }
+
   return (
     <div className="fixed top-0 left-0 right-0 bottom-0 z-10 flex justify-center w-full h-full">
       {!showAvatarOnly ? (
         <>
-          <div className="flex items-start justify-start w-2/5 h-1/6">
-            {isButtonVisible && (
-              <button
-                onClick={() => {
-                  handleButtonClick();
-                  setCameraZoomed(!cameraZoomed);
-                }}
-                className="flex w-1/12 h-2/6 items-center justify-center pointer-events-auto bg-blue-500 hover:bg-blue-600 text-white rounded-md mt-2 ml-2"
-              >
-                <MdOutlineVideoSettings />
-              </button>
+          <div className="flex flex-col items-start justify-start w-2/5 h-full">
+            <div className="flex items-start justify-start w-full h-1/6">
+              {isButtonVisible && (
+                <button
+                  onClick={() => {
+                    handleButtonClick();
+                    setCameraZoomed(!cameraZoomed);
+                  }}
+                  className="flex w-1/12 h-2/6 items-center justify-center pointer-events-auto bg-blue-500 hover:bg-blue-600 text-white rounded-md mt-2 ml-2"
+                >
+                  <MdOutlineVideoSettings />
+                </button>
+              )}
+            </div>
+            <div className="flex w-full h-4/6">
+            </div>
+            {!isButtonVisible && (
+              <div className="flex items-center justify-center w-full h-1/6">
+                <input
+                  className="hidden w-7/12 placeholder:text-gray-800 placeholder:italic p-4 rounded-md bg-opacity-50 bg-white backdrop-blur-md"
+                  placeholder="Escribe..."
+                  ref={input}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      sendMessage();
+                    }
+                  }}
+                />
+                <button
+                  hidden
+                  disabled={loading || message}
+                  onClick={sendMessage}
+                  className={`bg-blue-500 hover:bg-blue-600 text-white p-4 px-10 font-semibold uppercase rounded-md ${loading || message ? "cursor-not-allowed opacity-30" : ""
+                    }`}
+                >
+                  Enviar
+                </button>
+              </div>
             )}
           </div>
           {!matriculaValid ? (
@@ -207,7 +264,7 @@ export const UI = ({ hidden, ...props }) => {
                       <label>Login para </label>
                       <select
                         onChange={handleDropdownChange}
-                        className="text-black bg-transparent border border-black p-1 rounded-md"
+                        className="text-black bg-transparent p-1 rounded-md"
                       >
                         <option value="ALUMNO">Alumnos</option>
                         <option value="DOCENTE">Docentes</option>
@@ -279,10 +336,7 @@ export const UI = ({ hidden, ...props }) => {
                       </span>
                       <div className="flex flex-col justify-center h-3/5">
                         <ul className="list-disc list-inside">
-                          <li>{cardNames[selectedCard] ? cardNames[selectedCard] : "Ninguna sala seleccionada"}</li>
-                          <li>
-                            {count} {count === 1 ? "persona" : "personas"}
-                          </li>
+                          <li>{cardNames[selectedCard] ? cardNames[selectedCard] : "Sin sala"}</li>
                           <li>{startTime || endTime ? `${startTime ? ` ${startTime}` : ""} ${endTime ? `- ${endTime}` : ""}` : "Sin horario"}</li>
                         </ul>
                       </div>
@@ -303,7 +357,16 @@ export const UI = ({ hidden, ...props }) => {
                             className="react-calendar"
                             locale="es-ES"
                             minDate={new Date()}
-                            onChange={setSelectedDate}
+                            onChange={(date) => {
+                              const formattedDate = date.toLocaleDateString('es-ES', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric'
+                              });
+                              input.current.value = formattedDate;
+                              sendMessage();
+                              handleQuestionClick(currentQuestionIndex + 1);
+                            }}
                             value={selectedDate}
                             formatShortWeekday={(locale, date) => {
                               let weekday = date.toLocaleString(locale, {
@@ -345,45 +408,6 @@ export const UI = ({ hidden, ...props }) => {
                             ))}
                           </div>
                         );
-                      case "Equipos":
-                        return (
-                          <div className="w-full h-full flex flex-col items-center justify-center">
-                            <div className="flex justify-center items-center w-full h-2/6">
-                              <div className="flex justify-center items-center h-full w-4/12">
-                                <div
-                                  className={`flex justify-center items-center border border-black h-4/6 w-7/12 ${selected['LEGO'] ? 'bg-green-500' : ''}`}
-                                  onClick={() => toggleSelect('LEGO')}
-                                >
-                                  LEGO
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex justify-around items-center w-full h-2/6">
-                              <div className="flex justify-center items-center h-full w-4/12">
-                                <div className="flex justify-center items-center border border-black h-4/6 w-7/12">VR Headset</div>
-                              </div>
-                              <div className="h-full w-4/12 flex flex-col items-center justify-center p-4 rounded-lg">
-                                <p className="text-2xl font-bold mb-4">{count}</p>
-                                <div>
-                                  <button className="bg-blue-500 text-white px-4 py-2 rounded mr-2" onClick={() => count < 10 ? setCount(count + 1) : null}>+</button>
-                                  <button className="bg-red-500 text-white px-4 py-2 rounded" onClick={() => count > 0 ? setCount(count - 1) : null}>-</button>
-                                </div>
-                              </div>
-                              <div className="flex justify-center items-center h-full w-4/12">
-                                <div className="flex justify-center items-center border border-black h-4/6 w-7/12">PC</div>
-                              </div>
-                            </div>
-                            <div className="flex justify-stretch items-center w-full h-2/6">
-                              <div className="flex justify-end items-center h-full w-5/12">
-                                <div className="flex justify-center items-center border border-black h-4/6 w-6/12">Projector</div>
-                              </div>
-                              <div className="h-full w-2/12"></div>
-                              <div className="flex justify-start items-center h-full w-5/12">
-                                <div className="flex justify-center items-center border border-black h-4/6 w-6/12">Whiteboard</div>
-                              </div>
-                            </div>
-                          </div>
-                        );
                       case "Laboratorios":
                         return (
                           <div className="w-11/12 h-5/6 grid grid-cols-2 gap-4">
@@ -397,6 +421,65 @@ export const UI = ({ hidden, ...props }) => {
                                 {selectedCard === index && <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75">{cardNames[index]}</div>}
                               </div>
                             ))}
+                          </div>
+                        );
+                      case "Equipos":
+                        return (
+                          <div className="w-full h-full flex flex-col items-center justify-center">
+                            <div className="flex justify-center items-center w-full h-2/6">
+                              <div className="flex justify-center items-center h-full w-4/12">
+                                <div
+                                  className={`flex flex-col justify-center items-center h-4/6 w-7/12 ${selected['LEGO'] ? 'bg-green-500' : ''}`}
+                                  onClick={() => toggleSelectNew('LEGO')}
+                                >
+                                  <TbLego style={{ fontSize: '5em' }} /> LEGO
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex justify-around items-center w-full h-2/6">
+                              <div className="flex justify-center items-center h-full w-4/12">
+                                <div
+                                  className={`flex flex-col justify-center items-center h-4/6 w-7/12 ${selected['VR Headset'] ? 'bg-green-500' : ''}`}
+                                  onClick={() => toggleSelectNew('VR Headset')}
+                                >
+                                  <BsHeadsetVr style={{ fontSize: '5em' }} /> VR Headset
+                                </div>
+                              </div>
+                              <div className="h-full w-4/12 flex flex-col items-center justify-center p-4 rounded-lg">
+                                <p className="text-2xl font-bold mb-4">{count}</p>
+                                <div>
+                                  <button className="bg-blue-500 text-white px-4 py-2 rounded mr-2" onClick={() => count < 10 ? setCount(count + 1) : null}>+</button>
+                                  <button className="bg-red-500 text-white px-4 py-2 rounded" onClick={() => count > 0 ? setCount(count - 1) : null}>-</button>
+                                </div>
+                              </div>
+                              <div className="flex justify-center items-center h-full w-4/12">
+                                <div
+                                  className={`flex flex-col justify-center items-center h-4/6 w-7/12 ${selected['PC'] ? 'bg-green-500' : ''}`}
+                                  onClick={() => toggleSelectNew('PC')}
+                                >
+                                  <GiLaptop style={{ fontSize: '5em' }} /> PC
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex justify-stretch items-center w-full h-2/6">
+                              <div className="flex justify-end items-center h-full w-5/12">
+                                <div
+                                  className={`flex flex-col justify-center items-center h-4/6 w-6/12 ${selected['Projector'] ? 'bg-green-500' : ''}`}
+                                  onClick={() => toggleSelectNew('Projector')}
+                                >
+                                  <BsProjector style={{ fontSize: '5em' }} /> Projector
+                                </div>
+                              </div>
+                              <div className="h-full w-2/12"></div>
+                              <div className="flex justify-start items-center h-full w-5/12">
+                                <div
+                                  className={`flex flex-col justify-center items-center h-4/6 w-6/12 ${selected['Whiteboard'] ? 'bg-green-500' : ''}`}
+                                  onClick={() => toggleSelectNew('Whiteboard')}
+                                >
+                                  <FaChalkboardTeacher style={{ fontSize: '5em' }} /> Whiteboard
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         );
                     }
@@ -431,8 +514,8 @@ export const UI = ({ hidden, ...props }) => {
             >
             </div>
           </div>
-          <div style={{ position: 'absolute', bottom: 0, right: 0 }} className="flex flex-col justify-center items-center h-full w-8/12">
-            <div className="flex w-full h-1/6 relative">
+          <div style={{ position: 'absolute', bottom: 0, right: 0 }} className="flex flex-col justify-center items-center h-full w-6/12">
+            <div className="border border-black flex w-full h-1/6 relative">
               <div style={{
                 width: '100%',
                 height: '100%',
@@ -474,7 +557,7 @@ export const UI = ({ hidden, ...props }) => {
                 </div>
               </div>
             </div>
-            <div className="flex w-full h-2/6">
+            <div className="border border-black flex w-full h-2/6">
               <div style={{
                 width: '100%',
                 height: '100%',
@@ -483,34 +566,37 @@ export const UI = ({ hidden, ...props }) => {
                 clipPath: 'polygon(10% 100%, 100% 100%, 100% 0, 20% 0)',
                 border: '0.1px solid black',
               }}>
-                <div className="border border-black flex items-center justify-end w-full h-full">
+                <div className="flex items-center justify-end w-full h-full">
                   <div className="flex flex-col w-5/12 h-5/6 mr-2">
-                    <div className="flex items-baseline justify-end h-3/6">
+                    <div className="flex items-end justify-end h-3/6">
                       <span style={{
-                        fontSize: '4em',
+                        fontSize: '4vw',
                         color: 'white',
-                        fontWeight: 'bold'
+                        fontWeight: 'bold',
+                        whiteSpace: 'nowrap'
                       }}>Jose Oliva</span>
                     </div>
                     <div className="items-start justify-end flex h-3/6">
                       <span style={{
-                        fontSize: '2.5em',
+                        fontSize: '3vw',
                         color: '#00FFF7',
-                        fontWeight: 'bold'
+                        fontWeight: 'bold',
+                        whiteSpace: 'nowrap'
                       }}>Lego Room</span>
                     </div>
                   </div>
-                  <div className="border-l border-white flex flex-col items-center justify-center w-4/12 h-4/6 ml-2 mr-4">
+                  <div className="flex flex-col items-center justify-center w-4/12 h-4/6 ml-2 mr-4">
                     <label style={{
-                      fontSize: '2em',
+                      fontSize: '3vw',
                       fontFamily: 'Arial, sans-serif',
-                      color: 'white'
-                    }}>8:30 PM - 10:30 PM</label>
+                      whiteSpace: 'nowrap'
+                    }}>
+                    </label>
                   </div>
                 </div>
               </div>
             </div>
-            <div className="flex w-full h-3/6 relative">
+            <div className="border border-black flex w-full h-3/6 relative">
               <div style={{
                 width: '100%',
                 height: '100%',
@@ -542,7 +628,7 @@ export const UI = ({ hidden, ...props }) => {
                 width: '100%',
                 height: '100%',
                 backgroundImage: `url(${posterImages[currentImageIndex]})`,
-                backgroundSize: 'contain',
+                backgroundSize: 'cover',
                 backgroundRepeat: 'no-repeat',
                 backgroundPosition: 'center',
                 position: 'absolute',
