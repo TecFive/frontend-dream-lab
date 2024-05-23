@@ -516,7 +516,7 @@ export const UI = ({ hidden, ...props }) => {
             </div>
           </div>
           <div style={{ position: 'absolute', bottom: 0, right: 0 }} className="flex flex-col justify-center items-center h-full w-6/12">
-            <div className="border border-black flex w-full h-1/6 relative">
+            <div className="flex w-full h-1/6 relative">
               <div style={{
                 width: '100%',
                 height: '100%',
@@ -559,7 +559,7 @@ export const UI = ({ hidden, ...props }) => {
                 </div>
               </div>
             </div>
-            <div className="border border-black flex w-full h-2/6">
+            <div className="flex w-full h-2/6">
               <div style={{
                 width: '100%',
                 height: '100%',
@@ -571,7 +571,7 @@ export const UI = ({ hidden, ...props }) => {
                 <ReservationBanner />
               </div>
             </div>
-            <div className="border border-black flex w-full h-3/6 relative">
+            <div className="flex w-full h-3/6 relative">
               <div style={{
                 width: '100%',
                 height: '100%',
