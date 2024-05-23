@@ -19,6 +19,7 @@ import Poster3 from "../assets/poster3.png";
 import Poster4 from "../assets/poster4.png";
 import Poster5 from "../assets/poster5.png";
 import Poster6 from "../assets/poster6.png";
+import ReservationBanner from './ReservationBanner';
 
 export const UI = ({ hidden, ...props }) => {
   const input = useRef();
@@ -550,9 +551,10 @@ export const UI = ({ hidden, ...props }) => {
                   color: 'white'
                 }}>
                   <span style={{
-                    fontSize: '1.5em',
+                    fontSize: '3vw',
                     color: 'white',
-                    fontWeight: 'bold'
+                    fontWeight: 'bold',
+                    whiteSpace: 'nowrap'
                   }}>Proxima Reservación</span>
                 </div>
               </div>
@@ -566,34 +568,7 @@ export const UI = ({ hidden, ...props }) => {
                 clipPath: 'polygon(10% 100%, 100% 100%, 100% 0, 20% 0)',
                 border: '0.1px solid black',
               }}>
-                <div className="flex items-center justify-end w-full h-full">
-                  <div className="flex flex-col w-5/12 h-5/6 mr-2">
-                    <div className="flex items-end justify-end h-3/6">
-                      <span style={{
-                        fontSize: '4vw',
-                        color: 'white',
-                        fontWeight: 'bold',
-                        whiteSpace: 'nowrap'
-                      }}>Jose Oliva</span>
-                    </div>
-                    <div className="items-start justify-end flex h-3/6">
-                      <span style={{
-                        fontSize: '3vw',
-                        color: '#00FFF7',
-                        fontWeight: 'bold',
-                        whiteSpace: 'nowrap'
-                      }}>Lego Room</span>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-center justify-center w-4/12 h-4/6 ml-2 mr-4">
-                    <label style={{
-                      fontSize: '3vw',
-                      fontFamily: 'Arial, sans-serif',
-                      whiteSpace: 'nowrap'
-                    }}>
-                    </label>
-                  </div>
-                </div>
+                <ReservationBanner />
               </div>
             </div>
             <div className="border border-black flex w-full h-3/6 relative">
