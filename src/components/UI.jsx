@@ -519,7 +519,7 @@ export const UI = ({ hidden, ...props }) => {
                 width: '100%',
                 height: '100%',
                 backgroundImage: `url(${posterImages[currentImageIndex]})`,
-                backgroundSize: 'contain',
+                backgroundSize: 'cover',
                 backgroundRepeat: 'no-repeat',
                 backgroundPosition: 'center',
                 position: 'absolute',
