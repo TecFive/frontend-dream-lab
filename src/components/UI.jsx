@@ -18,6 +18,7 @@ import Poster3 from "../assets/poster3.png";
 import Poster4 from "../assets/poster4.png";
 import Poster5 from "../assets/poster5.png";
 import Poster6 from "../assets/poster6.png";
+import ReservationBanner from './ReservationBanner';
 
 export const UI = ({ hidden, ...props }) => {
   const [role, setRole] = useState("ALUMNO");
@@ -483,31 +484,7 @@ export const UI = ({ hidden, ...props }) => {
                 clipPath: 'polygon(10% 100%, 100% 100%, 100% 0, 20% 0)',
                 border: '0.1px solid black',
               }}>
-                <div className="border border-black flex items-center justify-end w-full h-full">
-                  <div className="flex flex-col w-5/12 h-5/6 mr-2">
-                    <div className="flex items-baseline justify-end h-3/6">
-                      <span style={{
-                        fontSize: '4em',
-                        color: 'white',
-                        fontWeight: 'bold'
-                      }}>Jose Oliva</span>
-                    </div>
-                    <div className="items-start justify-end flex h-3/6">
-                      <span style={{
-                        fontSize: '2.5em',
-                        color: '#00FFF7',
-                        fontWeight: 'bold'
-                      }}>Lego Room</span>
-                    </div>
-                  </div>
-                  <div className="border-l border-white flex flex-col items-center justify-center w-4/12 h-4/6 ml-2 mr-4">
-                    <label style={{
-                      fontSize: '2em',
-                      fontFamily: 'Arial, sans-serif',
-                      color: 'white'
-                    }}>8:30 PM - 10:30 PM</label>
-                  </div>
-                </div>
+                <ReservationBanner />
               </div>
             </div>
             <div className="flex w-full h-3/6 relative">
