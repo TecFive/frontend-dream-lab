@@ -31,7 +31,6 @@ export const UI = ({ hidden, ...props }) => {
   const [isButtonVisible, setButtonVisible] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [count, setCount] = useState(0);
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const images = [lab3d, labCompu, labElectro, labIos, labServer, labVr];
@@ -40,7 +39,6 @@ export const UI = ({ hidden, ...props }) => {
   const [showAvatarOnly, setShowAvatarOnly] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const posterImages = [Poster1, Poster2, Poster3, Poster4, Poster5, Poster6];
-  const [isScanning, setIsScanning] = useState(false);
   const [selected, setSelected] = useState({});
 
   const convertTo12hr = (time) => {
@@ -116,10 +114,6 @@ export const UI = ({ hidden, ...props }) => {
   const handleDropdownChange = (e) => {
     setRole(e.target.value);
     setInputValue(e.target.value === "ALUMNO" ? "A0" : "L0");
-  };
-
-  const toggleSelect = (item) => {
-    setSelected(prev => ({ ...prev, [item]: !prev[item] }));
   };
 
   const questions = [
@@ -292,71 +286,52 @@ export const UI = ({ hidden, ...props }) => {
                 />
               </div>
               <div className="flex flex-col items-center justify-center text-xl pointer-events-auto w-4/6 h-2/6 mx-auto bg-opacity-50 bg-white backdrop-blur-md rounded-b">
-                {isScanning ? (
-                  <div className="flex flex-col items-center justify-center">
-                    <p className="text-black">Escaneando</p>
-                    <div className="flex space-x-2">
-                      <div className="animate-ping h-3 w-3 bg-blue-500 rounded-full"></div>
-                      <div className="animate-ping delay-150 h-3 w-3 bg-blue-500 rounded-full"></div>
-                      <div className="animate-ping delay-300 h-3 w-3 bg-blue-500 rounded-full"></div>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="mb-8">
-                      <label>Login para </label>
-                      <select
-                        onChange={handleDropdownChange}
-                        className="text-black bg-transparent p-1 rounded-md"
-                      >
-                        <option value="ALUMNO">Alumnos</option>
-                        <option value="DOCENTE">Docentes</option>
-                      </select>
-                    </div>
-                    <div className="w-2/5 flex flex-col items-center">
-                      <form
-                        onSubmit={handleFormSubmit}
-                        className="flex items-center justify-between"
-                      >
-                        <input
-                          className="placeholder:text-gray-800 placeholder:italic p-4"
-                          value={inputValue}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                            }
-                          }}
-                          onChange={(e) => {
-                            if (
-                              role === "ALUMNO" &&
-                              !e.target.value.startsWith("A0")
-                            ) {
-                              setInputValue("A0" + e.target.value.slice(2));
-                            } else if (
-                              role === "DOCENTE" &&
-                              !e.target.value.startsWith("L0")
-                            ) {
-                              setInputValue("L0" + e.target.value.slice(2));
-                            } else {
-                              setInputValue(e.target.value);
-                            }
-                          }}
-                        />
-                        <button className="bg-blue-500 hover:bg-blue-600 text-white w-14 h-full flex items-center justify-center">
-                          <FaCheck />
-                        </button>
-                      </form>
-                      {matriculaError && (
-                        <p className="text-red-500">No existe esa matricula</p>
-                      )}
-                    </div>
-                    <button
-                      className="bg-blue-500 hover:bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center mt-5"
-                      onClick={() => setIsScanning(true)}
-                    >
-                      <BsUpcScan />
+                <div className="mb-8">
+                  <label>Login para </label>
+                  <select
+                    onChange={handleDropdownChange}
+                    className="border border-black first-line:text-black bg-transparent p-1 rounded-md"
+                  >
+                    <option value="ALUMNO">Alumnos</option>
+                    <option value="DOCENTE">Docentes</option>
+                  </select>
+                </div>
+                <div className="w-2/5 flex flex-col items-center">
+                  <form
+                    onSubmit={handleFormSubmit}
+                    className="flex items-center justify-between"
+                  >
+                    <input
+                      className="placeholder:text-gray-800 placeholder:italic p-4"
+                      value={inputValue}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                        }
+                      }}
+                      onChange={(e) => {
+                        if (
+                          role === "ALUMNO" &&
+                          !e.target.value.startsWith("A0")
+                        ) {
+                          setInputValue("A0" + e.target.value.slice(2));
+                        } else if (
+                          role === "DOCENTE" &&
+                          !e.target.value.startsWith("L0")
+                        ) {
+                          setInputValue("L0" + e.target.value.slice(2));
+                        } else {
+                          setInputValue(e.target.value);
+                        }
+                      }}
+                    />
+                    <button className="bg-blue-500 hover:bg-blue-600 text-white w-14 h-full flex items-center justify-center">
+                      <FaCheck />
                     </button>
-                  </>
-                )}
+                  </form>
+                  {matriculaError && (
+                    <p className="text-red-500">No existe esa matricula</p>
+                  )}
+                </div>
               </div>
             </div>
           ) : (
