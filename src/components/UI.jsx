@@ -43,8 +43,50 @@ export const UI = ({ hidden, ...props }) => {
   const [isScanning, setIsScanning] = useState(false);
   const [selected, setSelected] = useState({});
 
-  const toggleSelectNew = (item) => {
-    setSelected(prev => ({ ...prev, [item]: !prev[item] }));
+  const convertTo12hr = (time) => {
+    if (!time) return "";
+    let [hours, minutes] = time.split(':');
+    let period = +hours < 12 ? 'AM' : 'PM';
+    hours = +hours % 12 || 12;
+    return `${hours}:${minutes} ${period}`;
+  }
+
+  const teamIcons = {
+    'LEGO': <TbLego />,
+    'VR Headset': <BsHeadsetVr />,
+    'PC': <GiLaptop />,
+    'Projector': <BsProjector />,
+    'Whiteboard': <FaChalkboardTeacher />
+  };
+
+  const [counts, setCounts] = useState({
+    'LEGO': 0,
+    'VR Headset': 0,
+    'PC': 0,
+    'Projector': 0,
+    'Whiteboard': 0
+  });
+
+  const incrementCount = () => {
+    if (selected) {
+      setCounts(prevCounts => ({
+        ...prevCounts,
+        [selected]: prevCounts[selected] < 10 ? prevCounts[selected] + 1 : prevCounts[selected]
+      }));
+    }
+  };
+
+  const decrementCount = () => {
+    if (selected) {
+      setCounts(prevCounts => ({
+        ...prevCounts,
+        [selected]: prevCounts[selected] > 0 ? prevCounts[selected] - 1 : prevCounts[selected]
+      }));
+    }
+  };
+
+  const toggleSelectNew = (newSelection) => {
+    setSelected(newSelection);
   };
 
   React.useEffect(() => {
@@ -63,12 +105,12 @@ export const UI = ({ hidden, ...props }) => {
   }, [isButtonVisible]);
 
   const cardNames = [
+    "PCB Factory",
+    "PC Room",
+    "Electric Garage",
+    "Meeting Room",
     "Lego Room",
     "VR Room",
-    "PC Room",
-    "Meeting Room",
-    "Electric Garage",
-    "PCB Factory"
   ];
 
   const handleDropdownChange = (e) => {
@@ -82,8 +124,8 @@ export const UI = ({ hidden, ...props }) => {
 
   const questions = [
     "Fecha",
-    "Horario",
     "Laboratorios",
+    "Horario",
     "Equipos",
   ];
 
@@ -319,7 +361,7 @@ export const UI = ({ hidden, ...props }) => {
             </div>
           ) : (
             <div className="flex flex-row items-center justify-center w-3/5 h-full">
-              <div className="w-3/12 h-5/6 flex flex-col justify-center items-center bg-[#10069f] relative">
+              <div className="w-3/12 h-5/6 flex flex-col justify-center items-center bg-[#10069f] relative rounded-l-md">
                 {selectedDate && (
                   <div className="h-full w-full flex flex-col items-center text-white ">
                     <div className="h-3/5 w-11/12 flex flex-col items-center justify-center">
@@ -335,10 +377,29 @@ export const UI = ({ hidden, ...props }) => {
                       <span className="flex h-1/5 items-center text-base underline uppercase font-bold">
                         Especificaciones :
                       </span>
-                      <div className="flex flex-col justify-center h-3/5">
+                      <div className="flex flex-col justify-start h-3/5">
                         <ul className="list-disc list-inside">
                           <li>{cardNames[selectedCard] ? cardNames[selectedCard] : "Sin sala"}</li>
-                          <li>{startTime || endTime ? `${startTime ? ` ${startTime}` : ""} ${endTime ? `- ${endTime}` : ""}` : "Sin horario"}</li>
+                          <li>
+                            {startTime || endTime
+                              ? `${startTime ? ` ${convertTo12hr(startTime)}` : ""} ${endTime ? `- ${convertTo12hr(endTime)}` : ""}`
+                              : "Sin horario"
+                            }
+                          </li>
+                          {Object.values(counts).some(count => count > 0) && (
+                            <>
+                              <li className="list-disc">Equipo seleccionado:</li>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+                                {Object.entries(counts).map(([team, count]) =>
+                                  count > 0 ? (
+                                    <div key={team} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                                      {teamIcons[team]} <span style={{ marginLeft: '5px' }}>x {count}</span>
+                                    </div>
+                                  ) : null
+                                )}
+                              </div>
+                            </>
+                          )}
                         </ul>
                       </div>
                     </div>
@@ -348,7 +409,7 @@ export const UI = ({ hidden, ...props }) => {
                   </div>
                 )}
               </div>
-              <div className="border border-blue-800 flex flex-col items-center justify-center w-8/12 h-5/6 bg-opacity-50 bg-white backdrop-blur-md">
+              <div className="border border-blue-800 flex flex-col items-center justify-center w-8/12 h-5/6 bg-opacity-50 bg-white backdrop-blur-md rounded-r-md">
                 <div className="w-full h-full flex justify-center items-center">
                   {(() => {
                     switch (questions[currentQuestionIndex]) {
@@ -359,6 +420,7 @@ export const UI = ({ hidden, ...props }) => {
                             locale="es-ES"
                             minDate={new Date()}
                             onChange={(date) => {
+                              setSelectedDate(date);
                               const formattedDate = date.toLocaleDateString('es-ES', {
                                 day: '2-digit',
                                 month: '2-digit',
@@ -390,38 +452,44 @@ export const UI = ({ hidden, ...props }) => {
                             }}
                           />
                         );
-                      case "Horario":
-                        return (
-                          <div className="w-11/12 h-5/6 grid grid-cols-4 gap-2">
-                            {times.map((time, index) => (
-                              <button
-                                key={index}
-                                className={`p-1 ${time === startTime ||
-                                  time === endTime ||
-                                  (startTime && endTime && time > startTime && time < endTime)
-                                  ? "bg-blue-500 text-white"
-                                  : "bg-gray-300"
-                                  }`}
-                                onClick={() => selectTime(time)}
-                              >
-                                {time}
-                              </button>
-                            ))}
-                          </div>
-                        );
                       case "Laboratorios":
                         return (
                           <div className="w-11/12 h-5/6 grid grid-cols-2 gap-4">
                             {images.map((image, index) => (
                               <div
                                 key={index}
-                                className="relative bg-cover bg-center text-center flex w-auto h-auto items-center justify-center"
+                                className="relative bg-cover bg-center text-center flex w-auto h-auto items-center justify-center rounded-md"
                                 style={{ backgroundImage: `url(${image})` }}
                                 onClick={() => setSelectedCard(selectedCard === index ? null : index)}
                               >
-                                {selectedCard === index && <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75">{cardNames[index]}</div>}
+                                <div className="absolute bottom-0 w-full flex items-center justify-center bg-blue-600 text-white rounded-b-md">{cardNames[index]}</div>
                               </div>
                             ))}
+                          </div>
+                        );
+                      case "Horario":
+                        return (
+                          <div className="w-11/12 h-5/6 grid grid-cols-4 gap-2">
+                            {times.map((time, index) => {
+                              let [hours, minutes] = time.split(':');
+                              let period = +hours < 12 ? 'AM' : 'PM';
+                              hours = +hours % 12 || 12;
+                              let time12hr = `${hours}:${minutes} ${period}`;
+                              return (
+                                <button
+                                  key={index}
+                                  className={`p-1 ${time === startTime ||
+                                    time === endTime ||
+                                    (startTime && endTime && time > startTime && time < endTime)
+                                    ? "bg-blue-500 text-white rounded-md"
+                                    : "bg-gray-300 rounded-md hover:bg-blue-500 hover:text-white"
+                                    }`}
+                                  onClick={() => selectTime(time)}
+                                >
+                                  {time12hr}
+                                </button>
+                              );
+                            })}
                           </div>
                         );
                       case "Equipos":
@@ -430,54 +498,59 @@ export const UI = ({ hidden, ...props }) => {
                             <div className="flex justify-center items-center w-full h-2/6">
                               <div className="flex justify-center items-center h-full w-4/12">
                                 <div
-                                  className={`flex flex-col justify-center items-center h-4/6 w-7/12 ${selected['LEGO'] ? 'bg-green-500' : ''}`}
+                                  className={`flex flex-col justify-center items-center h-4/6 w-7/12 rounded-xl ${selected === 'LEGO' ? 'bg-blue-500' : ''}`}
                                   onClick={() => toggleSelectNew('LEGO')}
                                 >
-                                  <TbLego style={{ fontSize: '5em' }} /> LEGO
+                                  <TbLego style={{ fontSize: '5em', color: selected === 'LEGO' ? 'white' : 'black' }} />
+                                  <span style={{ color: selected === 'LEGO' ? 'white' : 'black' }}>LEGO</span>
                                 </div>
                               </div>
                             </div>
                             <div className="flex justify-around items-center w-full h-2/6">
                               <div className="flex justify-center items-center h-full w-4/12">
                                 <div
-                                  className={`flex flex-col justify-center items-center h-4/6 w-7/12 ${selected['VR Headset'] ? 'bg-green-500' : ''}`}
+                                  className={`flex flex-col justify-center items-center h-4/6 w-7/12 rounded-xl ${selected === 'VR Headset' ? 'bg-blue-500' : ''}`}
                                   onClick={() => toggleSelectNew('VR Headset')}
                                 >
-                                  <BsHeadsetVr style={{ fontSize: '5em' }} /> VR Headset
+                                  <BsHeadsetVr style={{ fontSize: '5em', color: selected === 'VR Headset' ? 'white' : 'black' }} />
+                                  <span style={{ color: selected === 'VR Headset' ? 'white' : 'black' }}>VR Headset</span>
                                 </div>
                               </div>
                               <div className="h-full w-4/12 flex flex-col items-center justify-center p-4 rounded-lg">
-                                <p className="text-2xl font-bold mb-4">{count}</p>
+                                <p className="text-2xl font-bold mb-4">{selected ? counts[selected] : 0}</p>
                                 <div>
-                                  <button className="bg-blue-500 text-white px-4 py-2 rounded mr-2" onClick={() => count < 10 ? setCount(count + 1) : null}>+</button>
-                                  <button className="bg-red-500 text-white px-4 py-2 rounded" onClick={() => count > 0 ? setCount(count - 1) : null}>-</button>
+                                  <button className="bg-green-500 text-white text-2xl px-4 py-2 rounded-xl mr-2" onClick={incrementCount}>+</button>
+                                  <button className="bg-red-500 text-white text-2xl px-4 py-2 rounded-xl" onClick={decrementCount}>-</button>
                                 </div>
                               </div>
                               <div className="flex justify-center items-center h-full w-4/12">
                                 <div
-                                  className={`flex flex-col justify-center items-center h-4/6 w-7/12 ${selected['PC'] ? 'bg-green-500' : ''}`}
+                                  className={`flex flex-col justify-center items-center h-4/6 w-7/12 rounded-xl ${selected === 'PC' ? 'bg-blue-500' : ''}`}
                                   onClick={() => toggleSelectNew('PC')}
                                 >
-                                  <GiLaptop style={{ fontSize: '5em' }} /> PC
+                                  <GiLaptop style={{ fontSize: '5em', color: selected === 'PC' ? 'white' : 'black' }} />
+                                  <span style={{ color: selected === 'PC' ? 'white' : 'black' }}>PC</span>
                                 </div>
                               </div>
                             </div>
                             <div className="flex justify-stretch items-center w-full h-2/6">
                               <div className="flex justify-end items-center h-full w-5/12">
                                 <div
-                                  className={`flex flex-col justify-center items-center h-4/6 w-6/12 ${selected['Projector'] ? 'bg-green-500' : ''}`}
+                                  className={`flex flex-col justify-center items-center h-4/6 w-6/12 rounded-xl ${selected === 'Projector' ? 'bg-blue-500' : ''}`}
                                   onClick={() => toggleSelectNew('Projector')}
                                 >
-                                  <BsProjector style={{ fontSize: '5em' }} /> Projector
+                                  <BsProjector style={{ fontSize: '5em', color: selected === 'Projector' ? 'white' : 'black' }} />
+                                  <span style={{ color: selected === 'Projector' ? 'white' : 'black' }}>Projector</span>
                                 </div>
                               </div>
                               <div className="h-full w-2/12"></div>
                               <div className="flex justify-start items-center h-full w-5/12">
                                 <div
-                                  className={`flex flex-col justify-center items-center h-4/6 w-6/12 ${selected['Whiteboard'] ? 'bg-green-500' : ''}`}
+                                  className={`flex flex-col justify-center items-center h-4/6 w-6/12 rounded-xl ${selected === 'Whiteboard' ? 'bg-blue-500' : ''}`}
                                   onClick={() => toggleSelectNew('Whiteboard')}
                                 >
-                                  <FaChalkboardTeacher style={{ fontSize: '5em' }} /> Whiteboard
+                                  <FaChalkboardTeacher style={{ fontSize: '5em', color: selected === 'Whiteboard' ? 'white' : 'black' }} />
+                                  <span style={{ color: selected === 'Whiteboard' ? 'white' : 'black' }}>Whiteboard</span>
                                 </div>
                               </div>
                             </div>
