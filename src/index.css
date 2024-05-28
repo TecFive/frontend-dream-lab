@@ -76,3 +76,27 @@ body {
 .hover-arrow {
   visibility: hidden;
 }
+
+.text-animation {
+  animation: pulse 2s infinite;
+  color: blue;
+  font-size: 2em;
+  text-shadow: 0 0 5px #ffffff;
+  white-space: nowrap;
+}
+
+.checkmark-animation {
+  animation: bounce 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+  40% {transform: translateY(-30px);}
+  60% {transform: translateY(-15px);}
+}

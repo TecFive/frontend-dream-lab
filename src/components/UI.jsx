@@ -3,7 +3,7 @@ import React, { useRef, useState, useEffect } from "react";
 import { FaCheck, FaChalkboardTeacher } from "react-icons/fa";
 import { TbLego } from "react-icons/tb";
 import { GiLaptop } from "react-icons/gi";
-import { BsUpcScan, BsHeadsetVr, BsProjector } from "react-icons/bs";
+import { BsHeadsetVr, BsProjector } from "react-icons/bs";
 import { MdOutlineVideoSettings } from "react-icons/md";
 import ReactCalendar from "react-calendar";
 import "../index.css";
@@ -20,6 +20,8 @@ import Poster4 from "../assets/poster4.png";
 import Poster5 from "../assets/poster5.png";
 import Poster6 from "../assets/poster6.png";
 import ReservationBanner from './ReservationBanner';
+import axiosInstance from "../hooks/axiosInstance";
+import { FaCheckCircle } from 'react-icons/fa';
 
 export const UI = ({ hidden, ...props }) => {
   const input = useRef();
@@ -39,7 +41,56 @@ export const UI = ({ hidden, ...props }) => {
   const [showAvatarOnly, setShowAvatarOnly] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const posterImages = [Poster1, Poster2, Poster3, Poster4, Poster5, Poster6];
+  const [selectedRoomId, setSelectedRoomId] = useState(null);
   const [selected, setSelected] = useState({});
+  const [selectedLab, setSelectedLab] = useState(null);
+  const [reservationCreated, setReservationCreated] = useState(false);
+
+  const handleCreateReservation = async () => {
+    const startDate = new Date(selectedDate);
+    const [startHours, startMinutes] = startTime.split(':');
+    startDate.setHours(startHours, startMinutes);
+
+    const endDate = new Date(selectedDate);
+    const [endHours, endMinutes] = endTime.split(':');
+    endDate.setHours(endHours, endMinutes);
+
+    const reservedEquipment = Object.entries(counts)
+      .filter(([equipment, count]) => count > 1)
+      .map(([equipment]) => equipmentIds[equipment]);
+
+    try {
+      const payload = {
+        room_id: selectedRoomId,
+        start_date: startDate,
+        end_date: endDate,
+        reserved_equipment: reservedEquipment,
+        status: "6614aaed6d294f5d44008695",
+        comments: ""
+      }
+
+      console.log(payload);
+
+      setReservationCreated(true)
+
+      await axiosInstance.post("/reservations/", payload);
+
+      alert("¡Reservacion creada con exito!");
+      handleClose();
+    } catch (error) {
+      console.log(error);
+      alert(error);
+    }
+  };
+
+  const labToEquipments = {
+    "Lego Room": ["LEGO", "PC"],
+    "VR Room": ["VR Headset"],
+    "PC Room": ["VR Headset"],
+    "Meeting Room": ["Whiteboard", "Projector"],
+    "Electric Garage": ["Whiteboard", "Projector"],
+    "PCB Factory": ["VR Headset"],
+  };
 
   const convertTo12hr = (time) => {
     if (!time) return "";
@@ -64,6 +115,14 @@ export const UI = ({ hidden, ...props }) => {
     'Projector': 0,
     'Whiteboard': 0
   });
+
+  const equipmentIds = {
+    "LEGO": "6614aaed6d294f5d4400869c",
+    "VR Headset": "6614aaed6d294f5d4400869d",
+    "PC": "6614aaed6d294f5d4400869e",
+    "Projector": "6614aaed6d294f5d4400869f",
+    "Whiteboard": "6614aaed6d294f5d4400869g",
+  };
 
   const incrementCount = () => {
     if (selected) {
@@ -110,6 +169,15 @@ export const UI = ({ hidden, ...props }) => {
     "Lego Room",
     "VR Room",
   ];
+
+  const roomIds = {
+    "Lego Room": "6614aaed6d294f5d44008698",
+    "VR Room": "6614aaed6d294f5d44008699",
+    "PC Room": "6614aaed6d294f5d4400869a",
+    "Electric Garage": "6635064964d1e813a40d1d41",
+    "PCB Factory": "6635064964d1e813a40d1d44",
+    "Meeting Room": "6614aaed6d294f5d4400869b",
+  };
 
   const handleDropdownChange = (e) => {
     setRole(e.target.value);
@@ -378,178 +446,200 @@ export const UI = ({ hidden, ...props }) => {
                         </ul>
                       </div>
                     </div>
-                    <button className="bg-blue-500 hover:bg-blue-600 text-white w-11/12 flex items-center justify-center text-2xl uppercase rounded-md">
+                    <button
+                      className="bg-blue-500 hover:bg-blue-600 text-white w-11/12 flex items-center justify-center text-2xl uppercase rounded-md"
+                      onClick={handleCreateReservation}
+                    >
                       Confirmar
                     </button>
                   </div>
                 )}
               </div>
               <div className="border border-blue-800 flex flex-col items-center justify-center w-8/12 h-5/6 bg-opacity-50 bg-white backdrop-blur-md rounded-r-md">
-                <div className="w-full h-full flex justify-center items-center">
-                  {(() => {
-                    switch (questions[currentQuestionIndex]) {
-                      case "Fecha":
-                        return (
-                          <ReactCalendar
-                            className="react-calendar"
-                            locale="es-ES"
-                            minDate={new Date()}
-                            onChange={(date) => {
-                              setSelectedDate(date);
-                              const formattedDate = date.toLocaleDateString('es-ES', {
-                                day: '2-digit',
-                                month: '2-digit',
-                                year: 'numeric'
-                              });
-                              input.current.value = formattedDate;
-                              sendMessage();
-                              handleQuestionClick(currentQuestionIndex + 1);
-                            }}
-                            value={selectedDate}
-                            formatShortWeekday={(locale, date) => {
-                              let weekday = date.toLocaleString(locale, {
-                                weekday: "long",
-                              });
-                              weekday =
-                                weekday.charAt(0).toUpperCase() +
-                                weekday.slice(1);
-                              return weekday;
-                            }}
-                            formatMonthYear={(locale, date) => {
-                              let monthYear = date.toLocaleString(locale, {
-                                month: "long",
-                                year: "numeric",
-                              });
-                              monthYear =
-                                monthYear.charAt(0).toUpperCase() +
-                                monthYear.slice(1);
-                              return monthYear;
-                            }}
-                          />
-                        );
-                      case "Laboratorios":
-                        return (
-                          <div className="w-11/12 h-5/6 grid grid-cols-2 gap-4">
-                            {images.map((image, index) => (
-                              <div
-                                key={index}
-                                className="relative bg-cover bg-center text-center flex w-auto h-auto items-center justify-center rounded-md"
-                                style={{ backgroundImage: `url(${image})` }}
-                                onClick={() => setSelectedCard(selectedCard === index ? null : index)}
-                              >
-                                <div className="absolute bottom-0 w-full flex items-center justify-center bg-blue-600 text-white rounded-b-md">{cardNames[index]}</div>
+                {reservationCreated ? (
+                    <div className="w-10/12 h-full flex flex-col justify-center items-center">
+                      <FaCheckCircle className="checkmark-animation" size={50} color="blue" />
+                      <h4 className="text-animation">RESERVACIÓN CREADA CON ÉXITO</h4>
+                    </div>
+                ) : (
+                  <>
+                    <div className="w-full h-full flex justify-center items-center">
+                      {(() => {
+                        switch (questions[currentQuestionIndex]) {
+                          case "Fecha":
+                            return (
+                              <ReactCalendar
+                                className="react-calendar"
+                                locale="es-ES"
+                                minDate={new Date()}
+                                onChange={(date) => {
+                                  setSelectedDate(date);
+                                  handleQuestionClick(currentQuestionIndex + 1);
+                                }}
+                                value={selectedDate}
+                                formatShortWeekday={(locale, date) => {
+                                  let weekday = date.toLocaleString(locale, {
+                                    weekday: "long",
+                                  });
+                                  weekday =
+                                    weekday.charAt(0).toUpperCase() +
+                                    weekday.slice(1);
+                                  return weekday;
+                                }}
+                                formatMonthYear={(locale, date) => {
+                                  let monthYear = date.toLocaleString(locale, {
+                                    month: "long",
+                                    year: "numeric",
+                                  });
+                                  monthYear =
+                                    monthYear.charAt(0).toUpperCase() +
+                                    monthYear.slice(1);
+                                  return monthYear;
+                                }}
+                              />
+                            );
+                          case "Horario":
+                            return (
+                              <div className="w-11/12 h-5/6 grid grid-cols-4 gap-2">
+                                {times.map((time, index) => {
+                                  let [hours, minutes] = time.split(':');
+                                  let period = +hours < 12 ? 'AM' : 'PM';
+                                  hours = +hours % 12 || 12;
+                                  let time12hr = `${hours}:${minutes} ${period}`;
+                                  return (
+                                    <button
+                                      key={index}
+                                      className={`p-1 ${time === startTime ||
+                                        time === endTime ||
+                                        (startTime && endTime && time > startTime && time < endTime)
+                                        ? "bg-blue-500 text-white rounded-md"
+                                        : "bg-gray-300 rounded-md hover:bg-blue-500 hover:text-white"
+                                        }`}
+                                      onClick={() => {
+                                        if (!startTime || time === startTime) {
+                                          setStartTime(time);
+                                          setEndTime(null);
+                                        } else if (!endTime || time === endTime) {
+                                          setEndTime(time);
+                                          if (time !== startTime) {
+                                            handleQuestionClick(currentQuestionIndex + 1);
+                                          }
+                                        } else if (startTime && endTime) {
+                                          setStartTime(time);
+                                          setEndTime(null);
+                                        }
+                                      }}
+                                    >
+                                      {time12hr}
+                                    </button>
+                                  );
+                                })}
                               </div>
-                            ))}
-                          </div>
-                        );
-                      case "Horario":
-                        return (
-                          <div className="w-11/12 h-5/6 grid grid-cols-4 gap-2">
-                            {times.map((time, index) => {
-                              let [hours, minutes] = time.split(':');
-                              let period = +hours < 12 ? 'AM' : 'PM';
-                              hours = +hours % 12 || 12;
-                              let time12hr = `${hours}:${minutes} ${period}`;
-                              return (
-                                <button
-                                  key={index}
-                                  className={`p-1 ${time === startTime ||
-                                    time === endTime ||
-                                    (startTime && endTime && time > startTime && time < endTime)
-                                    ? "bg-blue-500 text-white rounded-md"
-                                    : "bg-gray-300 rounded-md hover:bg-blue-500 hover:text-white"
-                                    }`}
-                                  onClick={() => selectTime(time)}
-                                >
-                                  {time12hr}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        );
-                      case "Equipos":
-                        return (
-                          <div className="w-full h-full flex flex-col items-center justify-center">
-                            <div className="flex justify-center items-center w-full h-2/6">
-                              <div className="flex justify-center items-center h-full w-4/12">
-                                <div
-                                  className={`flex flex-col justify-center items-center h-4/6 w-7/12 rounded-xl ${selected === 'LEGO' ? 'bg-blue-500' : ''}`}
-                                  onClick={() => toggleSelectNew('LEGO')}
-                                >
-                                  <TbLego style={{ fontSize: '5em', color: selected === 'LEGO' ? 'white' : 'black' }} />
-                                  <span style={{ color: selected === 'LEGO' ? 'white' : 'black' }}>LEGO</span>
+                            );
+                          case "Laboratorios":
+                            return (
+                              <div className="w-11/12 h-5/6 grid grid-cols-2 gap-4">
+                                {images.map((image, index) => (
+                                  <div
+                                    key={index}
+                                    className="relative bg-cover bg-center text-center flex w-auto h-auto items-center justify-center rounded-md"
+                                    style={{ backgroundImage: `url(${image})` }}
+                                    onClick={() => {
+                                      setSelectedCard(selectedCard === index ? null : index);
+                                      setSelectedRoomId(roomIds[cardNames[index]]);
+                                      setSelectedLab(cardNames[index]);
+                                    }}
+                                  >
+                                    <div className="absolute bottom-0 w-full flex items-center justify-center bg-blue-600 text-white rounded-b-md">{cardNames[index]}</div>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          case "Equipos":
+                            return (
+                              <div className="w-full h-full flex flex-col items-center justify-center">
+                                <div className="flex justify-center items-center w-full h-2/6">
+                                  <div className="flex justify-center items-center h-full w-4/12">
+                                    <div
+                                      className={`flex flex-col justify-center items-center h-4/6 w-7/12 rounded-xl ${selected === 'LEGO' ? 'bg-blue-500' : (!labToEquipments[selectedLab]?.includes('LEGO') ? 'bg-red-500' : '')}`}
+                                      onClick={() => labToEquipments[selectedLab]?.includes('LEGO') && toggleSelectNew('LEGO')}
+                                    >
+                                      <TbLego style={{ fontSize: '5em', color: selected === 'LEGO' ? 'white' : 'black' }} />
+                                      <span style={{ color: selected === 'LEGO' ? 'white' : 'black' }}>LEGO</span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex justify-around items-center w-full h-2/6">
+                                  <div className="flex justify-center items-center h-full w-4/12">
+                                    <div
+                                      className={`flex flex-col justify-center items-center h-4/6 w-7/12 rounded-xl ${selected === 'VR Headset' ? 'bg-blue-500' : (!labToEquipments[selectedLab]?.includes('VR Headset') ? 'bg-red-500' : '')}`}
+                                      onClick={() => labToEquipments[selectedLab]?.includes('VR Headset') && toggleSelectNew('VR Headset')}
+                                    >
+                                      <BsHeadsetVr style={{ fontSize: '5em', color: selected === 'VR Headset' ? 'white' : 'black' }} />
+                                      <span style={{ color: selected === 'VR Headset' ? 'white' : 'black' }}>VR Headset</span>
+                                    </div>
+                                  </div>
+                                  <div className="h-full w-4/12 flex flex-col items-center justify-center p-4 rounded-lg">
+                                    <p className="text-2xl font-bold mb-4">{selected ? counts[selected] : 0}</p>
+                                    <div>
+                                      <button className="bg-green-500 text-white text-2xl px-4 py-2 rounded-xl mr-2" onClick={incrementCount}>+</button>
+                                      <button className="bg-red-500 text-white text-2xl px-4 py-2 rounded-xl" onClick={decrementCount}>-</button>
+                                    </div>
+                                  </div>
+                                  <div className="flex justify-center items-center h-full w-4/12">
+                                    <div
+                                      className={`flex flex-col justify-center items-center h-4/6 w-7/12 rounded-xl ${selected === 'PC' ? 'bg-blue-500' : (!labToEquipments[selectedLab]?.includes('PC') ? 'bg-red-500' : '')}`}
+                                      onClick={() => labToEquipments[selectedLab]?.includes('PC') && toggleSelectNew('PC')}
+                                    >
+                                      <GiLaptop style={{ fontSize: '5em', color: selected === 'PC' ? 'white' : 'black' }} />
+                                      <span style={{ color: selected === 'PC' ? 'white' : 'black' }}>PC</span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex justify-stretch items-center w-full h-2/6">
+                                  <div className="flex justify-end items-center h-full w-5/12">
+                                    <div
+                                      className={`flex flex-col justify-center items-center h-4/6 w-6/12 rounded-xl ${selected === 'Projector' ? 'bg-blue-500' : (!labToEquipments[selectedLab]?.includes('Projector') ? 'bg-red-500' : '')}`}
+                                      onClick={() => labToEquipments[selectedLab]?.includes('Projector') && toggleSelectNew('Projector')}
+                                    >
+                                      <BsProjector style={{ fontSize: '5em', color: selected === 'Projector' ? 'white' : 'black' }} />
+                                      <span style={{ color: selected === 'Projector' ? 'white' : 'black' }}>Projector</span>
+                                    </div>
+                                  </div>
+                                  <div className="h-full w-2/12"></div>
+                                  <div className="flex justify-start items-center h-full w-5/12">
+                                    <div
+                                      className={`flex flex-col justify-center items-center h-4/6 w-6/12 rounded-xl ${selected === 'Whiteboard' ? 'bg-blue-500' : (!labToEquipments[selectedLab]?.includes('Whiteboard') ? 'bg-red-500' : '')}`}
+                                      onClick={() => labToEquipments[selectedLab]?.includes('Whiteboard') && toggleSelectNew('Whiteboard')}
+                                    >
+                                      <FaChalkboardTeacher style={{ fontSize: '5em', color: selected === 'Whiteboard' ? 'white' : 'black' }} />
+                                      <span style={{ color: selected === 'Whiteboard' ? 'white' : 'black' }}>Whiteboard</span>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                            <div className="flex justify-around items-center w-full h-2/6">
-                              <div className="flex justify-center items-center h-full w-4/12">
-                                <div
-                                  className={`flex flex-col justify-center items-center h-4/6 w-7/12 rounded-xl ${selected === 'VR Headset' ? 'bg-blue-500' : ''}`}
-                                  onClick={() => toggleSelectNew('VR Headset')}
-                                >
-                                  <BsHeadsetVr style={{ fontSize: '5em', color: selected === 'VR Headset' ? 'white' : 'black' }} />
-                                  <span style={{ color: selected === 'VR Headset' ? 'white' : 'black' }}>VR Headset</span>
-                                </div>
-                              </div>
-                              <div className="h-full w-4/12 flex flex-col items-center justify-center p-4 rounded-lg">
-                                <p className="text-2xl font-bold mb-4">{selected ? counts[selected] : 0}</p>
-                                <div>
-                                  <button className="bg-green-500 text-white text-2xl px-4 py-2 rounded-xl mr-2" onClick={incrementCount}>+</button>
-                                  <button className="bg-red-500 text-white text-2xl px-4 py-2 rounded-xl" onClick={decrementCount}>-</button>
-                                </div>
-                              </div>
-                              <div className="flex justify-center items-center h-full w-4/12">
-                                <div
-                                  className={`flex flex-col justify-center items-center h-4/6 w-7/12 rounded-xl ${selected === 'PC' ? 'bg-blue-500' : ''}`}
-                                  onClick={() => toggleSelectNew('PC')}
-                                >
-                                  <GiLaptop style={{ fontSize: '5em', color: selected === 'PC' ? 'white' : 'black' }} />
-                                  <span style={{ color: selected === 'PC' ? 'white' : 'black' }}>PC</span>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex justify-stretch items-center w-full h-2/6">
-                              <div className="flex justify-end items-center h-full w-5/12">
-                                <div
-                                  className={`flex flex-col justify-center items-center h-4/6 w-6/12 rounded-xl ${selected === 'Projector' ? 'bg-blue-500' : ''}`}
-                                  onClick={() => toggleSelectNew('Projector')}
-                                >
-                                  <BsProjector style={{ fontSize: '5em', color: selected === 'Projector' ? 'white' : 'black' }} />
-                                  <span style={{ color: selected === 'Projector' ? 'white' : 'black' }}>Projector</span>
-                                </div>
-                              </div>
-                              <div className="h-full w-2/12"></div>
-                              <div className="flex justify-start items-center h-full w-5/12">
-                                <div
-                                  className={`flex flex-col justify-center items-center h-4/6 w-6/12 rounded-xl ${selected === 'Whiteboard' ? 'bg-blue-500' : ''}`}
-                                  onClick={() => toggleSelectNew('Whiteboard')}
-                                >
-                                  <FaChalkboardTeacher style={{ fontSize: '5em', color: selected === 'Whiteboard' ? 'white' : 'black' }} />
-                                  <span style={{ color: selected === 'Whiteboard' ? 'white' : 'black' }}>Whiteboard</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                    }
-                  })()}
-                </div>
-                <div className="w-full h-1/6 flex items-center justify-center space-x-4">
-                  {questions.map((question, index) => (
-                    <React.Fragment key={index}>
-                      {index !== 0 && <span className="text-gray-500">•</span>}
-                      <button
-                        onMouseEnter={() => handleMouseEnter(index)}
-                        onMouseLeave={handleMouseLeave}
-                        onClick={() => handleQuestionClick(index)}
-                        className={`relative text-xl h-4/6 w-auto flex items-center justify-center ${currentQuestionIndex === index ? "text-blue-500" : "text-gray-500"} ${hoverIndex === index ? "hovered" : ""}`}
-                      >
-                        {question}
-                        {currentQuestionIndex === index && <span className="absolute top-0 left-1/2 transform -translate-x-1/2 -mt-2 active-arrow">▼</span>}
-                      </button>
-                    </React.Fragment>
-                  ))}
-                </div>
+                            );
+                        }
+                      })()}
+                    </div>
+                    <div className="w-full h-1/6 flex items-center justify-center space-x-4">
+                      {questions.map((question, index) => (
+                        <React.Fragment key={index}>
+                          {index !== 0 && <span className="text-gray-500">•</span>}
+                          <button
+                            onMouseEnter={() => handleMouseEnter(index)}
+                            onMouseLeave={handleMouseLeave}
+                            onClick={() => handleQuestionClick(index)}
+                            className={`relative text-xl h-4/6 w-auto flex items-center justify-center ${currentQuestionIndex === index ? "text-blue-500" : "text-gray-500"} ${hoverIndex === index ? "hovered" : ""}`}
+                          >
+                            {question}
+                            {currentQuestionIndex === index && <span className="absolute top-0 left-1/2 transform -translate-x-1/2 -mt-2 active-arrow">▼</span>}
+                          </button>
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -672,7 +762,8 @@ export const UI = ({ hidden, ...props }) => {
             </div>
           </div>
         </div>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 };
