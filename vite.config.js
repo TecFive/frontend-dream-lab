@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/v1/reservations': {
+      '/reservations/': {
         target: 'https://dream-lab-backend.azurewebsites.net',
         changeOrigin: true,
         secure: false,

@@ -2,26 +2,24 @@
 
 import React, { useState, useEffect } from 'react';
 import { TransitionGroup, CSSTransition } from 'react-transition-group';
-import axios from 'axios';
 import './ReservationBanner.css';
+import axiosInstance from '../hooks/axiosInstance';
 
 const ReservationBanner = () => {
+  const [DBreservations, setReservations] = useState([]);
   const reservations = [
     { name: "Jose Oliva", room: "Lego Room", time: "8:30 PM - 10:30 PM" },
     { name: "Patricio Villarreal", room: "VR Room", time: "9:00 AM - 11:00 AM" },
     { name: "David Faudoa", room: "Meeting Room", time: "11:30 AM - 1:30 PM" }
   ];
 
-  const [indexReservation, setIndexReservation] = useState(0);
+  const [indexReservation, setIndexReservation] = useState(0); 
 
   useEffect(() => {
-    axios.get("/v1/reservations/", {
-      headers: {
-        Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2MWQ3NmNkZmM2Y2RhNmQ1MGNmMDQ3MiIsIm5hbWUiOiJQQVRSSUNJTyBWSUxMQVJSRUFMIiwiZW1haWwiOiJBMDA4MzQ1MjYiLCJjYXJlZXIiOiJJVEMiLCJzZW1lc3RlciI6Niwicm9sZSI6IlN0dWRlbnQifQ.JCPU9TCV6JEpushJ1VllSlMBMzFTPJY4dNuL0Em6SgI"
-      }
-    })
+    axiosInstance.get("/reservations/") 
       .then(response => {
         console.log('Success:', response);
+        setReservations(response.data); 
       })
       .catch(error => console.error('Error:', error));
 
@@ -76,7 +74,6 @@ const ReservationBanner = () => {
 };
 
 export default ReservationBanner;
-
 
 
 // DATOS DE BACK
