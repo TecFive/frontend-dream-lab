@@ -11,12 +11,14 @@ const ReservationBanner = () => {
   useEffect(() => {
     axiosInstance.get("/reservations/")
       .then(response => {
+        console.log('API response:', response.data);
         if (Array.isArray(response.data.data)) {
           const reservations = response.data.data.map(reservation => ({
             name: reservation.user.name,
             room: reservation.room.name,
             time: `${new Date(reservation.start_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${new Date(reservation.end_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
           }));
+          console.log('Formatted reservations:', reservations);
           setDBReservations(reservations); 
           setError(null);
         } else {
@@ -24,19 +26,23 @@ const ReservationBanner = () => {
         }
       })
       .catch(error => {
+        console.error('Error fetching reservations:', error);
         setError('Error al cargar reservaciones.');
       });
   }, []);
 
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      setIndexReservation((prevIndex) => (prevIndex + 1) % DBreservations.length);
-    }, 7000);
+    if (DBreservations.length > 0) {
+      const intervalId = setInterval(() => {
+        setIndexReservation((prevIndex) => (prevIndex + 1) % DBreservations.length);
+      }, 7000);
 
-    return () => clearInterval(intervalId);
+      return () => clearInterval(intervalId);
+    }
   }, [DBreservations.length]);
 
   const currentReservation = DBreservations[indexReservation];
+  console.log('Current reservation:', currentReservation);
 
   return (
     <div className="border border-black flex items-center justify-end w-full h-full">
@@ -88,6 +94,7 @@ const ReservationBanner = () => {
 };
 
 export default ReservationBanner;
+
 
 
 
