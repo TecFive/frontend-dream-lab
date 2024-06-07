@@ -4,7 +4,7 @@ const axiosInstance = axios.create({
     baseURL: "https://dream-lab-backend.azurewebsites.net/v1/",
     headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2MWQ3NmNkZmM2Y2RhNmQ1MGNmMDQ3MiIsIm5hbWUiOiJQQVRSSUNJTyBWSUxMQVJSRUFMIiwiZW1haWwiOiJBMDA4MzQ1MjYiLCJjYXJlZXIiOiJJVEMiLCJzZW1lc3RlciI6Niwicm9sZSI6IlN0dWRlbnQifQ.JCPU9TCV6JEpushJ1VllSlMBMzFTPJY4dNuL0Em6SgI'
+        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2NGI3MDIxZmM2Y2RhY2EyMjA1Yjg1YyIsIm5hbWUiOiJEQVZJRCBGQVVET0EiLCJlbWFpbCI6IkEwMDgzNDgwMSIsImNhcmVlciI6IklUQyIsInNlbWVzdGVyIjo2LCJyb2xlIjoiU1VQRVJBRE1JTiIsImV4cCI6MTcyNTQ3NDEwMn0.vjprGmHb5MX_AUBD1bZ33HQJjVJ_US0cjb5GzsKcnpA'
     }
 });
 

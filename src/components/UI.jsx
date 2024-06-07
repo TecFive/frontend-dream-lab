@@ -13,12 +13,6 @@ import labElectro from "../assets/electroLab.jpeg";
 import labIos from "../assets/iosLab.jpeg";
 import labServer from "../assets/serverlab.jpeg";
 import labVr from "../assets/vrLab.jpeg";
-import Poster1 from "../assets/poster1.png";
-import Poster2 from "../assets/poster2.jpeg";
-import Poster3 from "../assets/poster3.png";
-import Poster4 from "../assets/poster4.png";
-import Poster5 from "../assets/poster5.png";
-import Poster6 from "../assets/poster6.png";
 import ReservationBanner from './ReservationBanner';
 import axiosInstance from "../hooks/axiosInstance";
 import { FaCheckCircle } from 'react-icons/fa';
@@ -39,12 +33,35 @@ export const UI = ({ hidden, ...props }) => {
   const [selectedCard, setSelectedCard] = useState(null);
   const [hoverIndex, setHoverIndex] = React.useState(null);
   const [showAvatarOnly, setShowAvatarOnly] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const posterImages = [Poster1, Poster2, Poster3, Poster4, Poster5, Poster6];
   const [selectedRoomId, setSelectedRoomId] = useState(null);
   const [selected, setSelected] = useState({});
   const [selectedLab, setSelectedLab] = useState(null);
   const [reservationCreated, setReservationCreated] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const [posterImages, setPosterImages] = useState([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    axiosInstance.get('/posts/')
+      .then(response => {
+        console.log('API response:', response.data);
+        if (Array.isArray(response.data.data)) {
+          const images = response.data.data.map(post => ({
+            file: post.file
+          }));
+          console.log('Formatted images:', images);
+          setPosterImages(images);
+          setError(null);
+        } else {
+          throw new Error('Error');
+        }
+      })
+      .catch(error => {
+        console.error('Error imagenes:', error);
+        setError('Error al cargar las imágenes.');
+      });
+  }, []);
 
   const handleCreateReservation = async () => {
     const startDate = new Date(selectedDate);
@@ -59,13 +76,11 @@ export const UI = ({ hidden, ...props }) => {
       .filter(([equipment, count]) => count > 1)
       .map(([equipment]) => equipmentIds[equipment]);
 
-    try {
       const payload = {
         room_id: selectedRoomId,
-        start_date: startDate,
-        end_date: endDate,
+        start_date: startDate.toISOString().replace('T', ' ').slice(0, -1),
+        end_date: endDate.toISOString().replace('T', ' ').slice(0, -1),
         reserved_equipment: reservedEquipment,
-        status: "6614aaed6d294f5d44008695",
         comments: ""
       }
 
@@ -73,14 +88,7 @@ export const UI = ({ hidden, ...props }) => {
 
       setReservationCreated(true)
 
-      await axiosInstance.post("/reservations/", payload);
-
-      alert("¡Reservacion creada con exito!");
-      handleClose();
-    } catch (error) {
-      console.log(error);
-      alert(error);
-    }
+      setIsVisible(true);
   };
 
   const labToEquipments = {
@@ -306,23 +314,16 @@ export const UI = ({ hidden, ...props }) => {
             <div className="flex w-full h-4/6">
             </div>
             {!isButtonVisible && (
-              <div className="flex items-center justify-center w-full h-1/6">
+              <div className={`${isVisible ? "flex" : "hidden"} items-center justify-center w-full h-1/6`}>
                 <input
-                  className="hidden w-7/12 placeholder:text-gray-800 placeholder:italic p-4 rounded-md bg-opacity-50 bg-white backdrop-blur-md"
+                  className={`w-7/12 placeholder:text-gray-800 placeholder:italic p-4 rounded-md bg-opacity-50 bg-white backdrop-blur-md`}
                   placeholder="Escribe..."
                   ref={input}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      sendMessage();
-                    }
-                  }}
+                  onKeyDown={(e) => { if (e.key === "Enter") { sendMessage(); } }}
                 />
                 <button
-                  hidden
-                  disabled={loading || message}
                   onClick={sendMessage}
-                  className={`bg-blue-500 hover:bg-blue-600 text-white p-4 px-10 font-semibold uppercase rounded-md ${loading || message ? "cursor-not-allowed opacity-30" : ""
-                    }`}
+                  className={`bg-blue-500 hover:bg-blue-600 text-white p-4 px-10 font-semibold uppercase rounded-md ${loading || message ? "cursor-not-allowed opacity-80" : ""}`}
                 >
                   Enviar
                 </button>
@@ -446,20 +447,20 @@ export const UI = ({ hidden, ...props }) => {
                         </ul>
                       </div>
                     </div>
-                    <button
-                      className="bg-blue-500 hover:bg-blue-600 text-white w-11/12 flex items-center justify-center text-2xl uppercase rounded-md"
-                      onClick={handleCreateReservation}
-                    >
-                      Confirmar
-                    </button>
+                      <button
+                        className="bg-blue-500 hover:bg-blue-600 text-white w-11/12 flex items-center justify-center text-2xl uppercase rounded-md"
+                        onClick={handleCreateReservation}
+                      >
+                        Confirmar
+                      </button>
                   </div>
                 )}
               </div>
               <div className="border border-blue-800 flex flex-col items-center justify-center w-8/12 h-5/6 bg-opacity-50 bg-white backdrop-blur-md rounded-r-md">
                 {reservationCreated ? (
-                    <div className="w-10/12 h-full flex flex-col justify-center items-center">
+                    <div className="w-full h-full flex flex-col justify-center items-center">
                       <FaCheckCircle className="checkmark-animation" size={50} color="blue" />
-                      <h4 className="text-animation">RESERVACIÓN CREADA CON ÉXITO</h4>
+                      <h1 className="text-animation">RESERVACIÓN CREADA CON ÉXITO</h1>
                     </div>
                 ) : (
                   <>
@@ -475,6 +476,9 @@ export const UI = ({ hidden, ...props }) => {
                                 onChange={(date) => {
                                   setSelectedDate(date);
                                   handleQuestionClick(currentQuestionIndex + 1);
+                                  const formattedDate = date.toLocaleDateString('en-GB');
+                                  input.current.value = formattedDate;
+                                  sendMessage();
                                 }}
                                 value={selectedDate}
                                 formatShortWeekday={(locale, date) => {
@@ -528,6 +532,7 @@ export const UI = ({ hidden, ...props }) => {
                                           setStartTime(time);
                                           setEndTime(null);
                                         }
+                                        selectTime(time);
                                       }}
                                     >
                                       {time12hr}
@@ -649,7 +654,7 @@ export const UI = ({ hidden, ...props }) => {
           <div className="w-8/12 h-full grid grid-cols-1">
             <div
               className="bg-cover bg-center"
-              style={{ backgroundImage: `url(${images[currentImageIndex]})` }}
+              style={{ backgroundImage: `url(${posterImages[currentImageIndex].file})` }}
             >
             </div>
           </div>
@@ -737,18 +742,15 @@ export const UI = ({ hidden, ...props }) => {
                 zIndex: 3
               }}>
               </div>
-              <div style={{
-                width: '100%',
-                height: '100%',
-                backgroundImage: `url(${posterImages[currentImageIndex]})`,
-                backgroundSize: 'cover',
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'center',
-                position: 'absolute',
-                clipPath: 'polygon(15% 100%, 65% 100%, 80% 0, 30% 0)',
-                zIndex: 4
-              }}>
-              </div>
+                <div style={{
+                  width: '100%',
+                  height: '100%',
+                  backgroundColor: '#002c7f',
+                  position: 'absolute',
+                  clipPath: 'polygon(15% 100%, 65% 100%, 80% 0, 30% 0)',
+                  zIndex: 4,
+                }}>
+                </div>
               <div style={{
                 width: '100%',
                 height: '100%',
