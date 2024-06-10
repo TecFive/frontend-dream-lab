@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import "regenerator-runtime/runtime";
 
 const backendUrl = "http://localhost:3000";
 

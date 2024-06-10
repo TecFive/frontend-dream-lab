@@ -1,5 +1,5 @@
 import { useReserva } from "../hooks/useLAB";
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { FaCheck, FaChalkboardTeacher } from "react-icons/fa";
 import { TbLego } from "react-icons/tb";
 import { GiLaptop } from "react-icons/gi";
@@ -16,8 +16,32 @@ import labVr from "../assets/vrLab.jpeg";
 import ReservationBanner from './ReservationBanner';
 import axiosInstance from "../hooks/axiosInstance";
 import { FaCheckCircle } from 'react-icons/fa';
+import '../index.css';
+import { FaMicrophone, FaMicrophoneSlash } from "react-icons/fa6";
+import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 
 export const UI = ({ hidden, ...props }) => {
+
+  const initialData = [
+    { nombre: 'NOMBRE1', horario: 'HORARIO1' },
+    { nombre: 'NOMBRE2', horario: 'HORARIO2' },
+    { nombre: 'NOMBRE3', horario: 'HORARIO3' },
+    { nombre: 'NOMBRE4', horario: 'HORARIO4' },
+    { nombre: 'NOMBRE5', horario: 'HORARIO5' },
+    { nombre: 'NOMBRE6', horario: 'HORARIO6' },
+    { nombre: 'NOMBRE7', horario: 'HORARIO7' },
+    { nombre: 'NOMBRE8', horario: 'HORARIO8' },
+  ];
+
+  const cardNames = [
+    "PCB Factory",
+    "PC Room",
+    "Electric Garage",
+    "Meeting Room",
+    "Lego Room",
+    "VR Room",
+  ];
+
   const input = useRef();
   const [role, setRole] = useState("ALUMNO");
   const [inputValue, setInputValue] = useState("A0");
@@ -27,8 +51,6 @@ export const UI = ({ hidden, ...props }) => {
   const [isButtonVisible, setButtonVisible] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
   const images = [lab3d, labCompu, labElectro, labIos, labServer, labVr];
   const [selectedCard, setSelectedCard] = useState(null);
   const [hoverIndex, setHoverIndex] = React.useState(null);
@@ -41,16 +63,205 @@ export const UI = ({ hidden, ...props }) => {
   const [posterImages, setPosterImages] = useState([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [error, setError] = useState(null);
+  const [reservations, setReservations] = useState([]);
+  const [data, setData] = useState(initialData);
+  const [isClicked, setIsClicked] = useState(false);
+  const buttonRef = useRef(null);
+  const { transcript, listening, resetTranscript, browserSupportsSpeechRecognition } = useSpeechRecognition();
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+
+  const times = [];
+  for (let i = 0; i < 24; i++) {
+    for (let j = 0; j < 60; j += 30) {
+      const hour = i < 10 ? `0${i}` : i;
+      const minute = j === 0 ? "00" : j;
+      times.push(`${hour}:${minute}`);
+    }
+  }
+
+  const convertTo12hr = (time) => {
+    if (typeof time === 'object') {
+      time = JSON.stringify(time);
+    }
+    if (typeof time !== 'string') {
+      console.error(`Invalid time format. Expected a string but received ${typeof time}.`);
+      return "";
+    }
+    if (!time) return "";
+    let [hours, minutes] = time.split(':');
+    let period = +hours < 12 ? 'AM' : 'PM';
+    hours = +hours % 12 || 12;
+    return `${hours}:${minutes} ${period}`;
+  }
+
+  const convertTo24HourFormat = (time) => {
+    if (Array.isArray(time)) {
+      time = time[0];
+    }
+    if (typeof time === 'object') {
+      time = JSON.stringify(time);
+    }
+    if (!time) return null;
+    let match = time.match(/(\d{1,2})(?::(\d{2}))?\s*(a\.?\s*m\.?|p\.?\s*m\.?)/i);
+    if (!match) return null;
+    let [_, hour, minutes, period] = match;
+    hour = parseInt(hour);
+    minutes = minutes ? minutes : '00';
+    if (period.toLowerCase().replace(/\./g, '') === 'pm' && hour !== 12) hour += 12;
+    if (period.toLowerCase().replace(/\./g, '') === 'am' && hour === 12) hour = 0;
+    return `${hour.toString().padStart(2, '0')}:${minutes}`;
+  };
+
+  useEffect(() => {
+    const timeRegex = /de las (\d{1,2}(?::\d{2})?\s*(a\.?\s*m\.?|p\.?\s*m\.?)) a las (\d{1,2}(?::\d{2})?\s*(a\.?\s*m\.?|p\.?\s*m\.?))/i;
+    const match = transcript.match(timeRegex);
+    if (match) {
+      let startTime = convertTo24HourFormat(match[1]);
+      let endTime = convertTo24HourFormat(match[3]);
+      if (times.includes(startTime) && times.includes(endTime)) {
+        setStartTime(startTime);
+        setEndTime(endTime);
+        selectTime({ start: startTime, end: endTime });
+      } else {
+        let unavailableTimes = [];
+        if (!times.includes(startTime)) unavailableTimes.push(startTime);
+        if (!times.includes(endTime)) unavailableTimes.push(endTime);
+        console.error(`Los horarios ${unavailableTimes.join(' y ')} no están disponibles`);
+      }
+    }
+    let timesString = times.join(', ');
+    console.log(`Los horarios disponibles son: ${timesString}`);
+  }, [transcript]);
+
+  const mandarMatricula = (e) => {
+    e.preventDefault();
+    if (inputValue !== "A00830223" && inputValue !== "0005723140") {
+      setMatriculaError(true);
+    } else {
+      setMatriculaError(false);
+      setMatriculaValid(true);
+      setButtonVisible(false);
+    }
+  };
+
+  useEffect(() => {
+    const matriculaRegex = /a00830223/i;
+    const processedTranscript = transcript.replace(/\s+/g, '');
+    const match = processedTranscript.match(matriculaRegex);
+    if (match) {
+      let matricula = match[0];
+      matricula = matricula.charAt(0).toUpperCase() + matricula.slice(1);
+      setInputValue(matricula);
+      setTimeout(() => {
+        if (buttonRef.current) {
+          buttonRef.current.click();
+        }
+      }, 2000);
+    }
+  }, [transcript]);
+
+  useEffect(() => {
+    const dateRegex = /(\d{1,2}) de ([a-zA-Z]+) del (\d{4})/;
+    const match = transcript.match(dateRegex);
+    if (match) {
+      const day = parseInt(match[1]);
+      const month = match[2];
+      const year = parseInt(match[3]);
+      const monthNames = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+      const monthIndex = monthNames.indexOf(month.toLowerCase());
+      if (monthIndex !== -1) {
+        const date = new Date(year, monthIndex, day);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (date >= today) {
+          setSelectedDate(date);
+          handleQuestionClick(currentQuestionIndex + 1);
+        }
+      }
+    }
+  }, [transcript]);
+
+  useEffect(() => {
+    const cardNamesRegex = new RegExp(cardNames.join("|"), "i");
+    const match = transcript.match(cardNamesRegex);
+    if (match) {
+      const selectedCardName = match[0];
+      const index = cardNames.findIndex(cardName => cardName.toLowerCase() === selectedCardName.toLowerCase());
+      if (index !== -1) {
+        setSelectedCard(index);
+        setSelectedRoomId(roomIds[cardNames[index]]);
+        setSelectedLab(cardNames[index]);
+      }
+    }
+  }, [transcript, cardNames]);
+
+  const startListeningHandler = () => {
+    if (!listening) {
+      resetTranscript();
+      SpeechRecognition.startListening({ continuous: false, autoStop: true });
+    }
+  };
+
+  const stopListeningHandler = useCallback(() => {
+    if (listening) {
+      SpeechRecognition.stopListening();
+      setIsClicked(false);
+    }
+  }, [listening]);
+
+  useEffect(() => {
+    return () => {
+      stopListeningHandler();
+    };
+  }, [stopListeningHandler]);
+
+  if (!browserSupportsSpeechRecognition) {
+    return <p>Lo siento, tu navegador no soporta reconocimiento de voz.</p>
+  }
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setData(prevData => {
+        const firstItem = prevData[0];
+        return [...prevData.slice(1), firstItem];
+      });
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    axiosInstance.get("/reservations/")
+      .then(response => {
+        if (Array.isArray(response.data.data)) {
+          const reservations = response.data.data.map(reservation => {
+            const name = reservation.user.name;
+            const time = `${new Date(reservation.start_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${new Date(reservation.end_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+
+            // console.log(`Nombre: ${name}, Horario: ${time}`);
+
+            return { name, time };
+          });
+          setReservations(reservations);
+        } else {
+          throw new Error('La respuesta no es un array.');
+        }
+      })
+      .catch(error => {
+        // console.error('Error fetching reservations:', error);
+      });
+  }, []);
 
   useEffect(() => {
     axiosInstance.get('/posts/')
       .then(response => {
-        console.log('API response:', response.data);
+        // console.log('API response:', response.data);
         if (Array.isArray(response.data.data)) {
           const images = response.data.data.map(post => ({
             file: post.file
           }));
-          console.log('Formatted images:', images);
+          // console.log('Formatted images:', images);
           setPosterImages(images);
           setError(null);
         } else {
@@ -58,7 +269,7 @@ export const UI = ({ hidden, ...props }) => {
         }
       })
       .catch(error => {
-        console.error('Error imagenes:', error);
+        // console.error('Error imagenes:', error);
         setError('Error al cargar las imágenes.');
       });
   }, []);
@@ -76,19 +287,19 @@ export const UI = ({ hidden, ...props }) => {
       .filter(([equipment, count]) => count > 1)
       .map(([equipment]) => equipmentIds[equipment]);
 
-      const payload = {
-        room_id: selectedRoomId,
-        start_date: startDate.toISOString().replace('T', ' ').slice(0, -1),
-        end_date: endDate.toISOString().replace('T', ' ').slice(0, -1),
-        reserved_equipment: reservedEquipment,
-        comments: ""
-      }
+    const payload = {
+      room_id: selectedRoomId,
+      start_date: startDate.toISOString().replace('T', ' ').slice(0, -1),
+      end_date: endDate.toISOString().replace('T', ' ').slice(0, -1),
+      reserved_equipment: reservedEquipment,
+      comments: ""
+    }
 
-      console.log(payload);
+    console.log(payload);
 
-      setReservationCreated(true)
+    setReservationCreated(true)
 
-      setIsVisible(true);
+    setIsVisible(true);
   };
 
   const labToEquipments = {
@@ -99,14 +310,6 @@ export const UI = ({ hidden, ...props }) => {
     "Electric Garage": ["Whiteboard", "Projector"],
     "PCB Factory": ["VR Headset"],
   };
-
-  const convertTo12hr = (time) => {
-    if (!time) return "";
-    let [hours, minutes] = time.split(':');
-    let period = +hours < 12 ? 'AM' : 'PM';
-    hours = +hours % 12 || 12;
-    return `${hours}:${minutes} ${period}`;
-  }
 
   const teamIcons = {
     'LEGO': <TbLego />,
@@ -169,15 +372,6 @@ export const UI = ({ hidden, ...props }) => {
     }
   }, [isButtonVisible]);
 
-  const cardNames = [
-    "PCB Factory",
-    "PC Room",
-    "Electric Garage",
-    "Meeting Room",
-    "Lego Room",
-    "VR Room",
-  ];
-
   const roomIds = {
     "Lego Room": "6614aaed6d294f5d44008698",
     "VR Room": "6614aaed6d294f5d44008699",
@@ -202,15 +396,6 @@ export const UI = ({ hidden, ...props }) => {
   const handleQuestionClick = (index) => {
     setCurrentQuestionIndex(index);
   };
-
-  const times = [];
-  for (let i = 0; i < 24; i++) {
-    for (let j = 0; j < 60; j += 30) {
-      const hour = i < 10 ? `0${i}` : i;
-      const minute = j === 0 ? "00" : j;
-      times.push(`${hour}:${minute}`);
-    }
-  }
 
   const selectTime = (time) => {
     if (!startTime || (startTime && endTime)) {
@@ -271,17 +456,6 @@ export const UI = ({ hidden, ...props }) => {
     };
   }, [images]);
 
-  const handleFormSubmit = (e) => {
-    e.preventDefault();
-    if (inputValue !== "A00830223" && inputValue !== "0005723140") {
-      setMatriculaError(true);
-    } else {
-      setMatriculaError(false);
-      setMatriculaValid(true);
-      setButtonVisible(false);
-    }
-  };
-
   const sendMessage = () => {
     const text = input.current.value;
     if (!loading && !message) {
@@ -300,35 +474,62 @@ export const UI = ({ hidden, ...props }) => {
           <div className="flex flex-col items-start justify-start w-2/5 h-full">
             <div className="flex items-start justify-start w-full h-1/6">
               {isButtonVisible && (
-                <button
-                  onClick={() => {
-                    handleButtonClick();
-                    setCameraZoomed(!cameraZoomed);
-                  }}
-                  className="flex w-1/12 h-2/6 items-center justify-center pointer-events-auto bg-blue-500 hover:bg-blue-600 text-white rounded-md mt-2 ml-2"
-                >
-                  <MdOutlineVideoSettings />
-                </button>
+                <div className="w-2/12 h-full">
+                  <button
+                    onClick={() => {
+                      handleButtonClick();
+                      setCameraZoomed(!cameraZoomed);
+                    }}
+                    className="flex w-6/12 h-2/6 items-center justify-center pointer-events-auto bg-blue-500 hover:bg-blue-600 text-white rounded-md mt-2 ml-2"
+                  >
+                    <MdOutlineVideoSettings />
+                  </button>
+                </div>
+              )}
+              {!isButtonVisible && (
+                <div className={`${isVisible ? "flex" : "hidden"} items-center justify-center w-full h-full`}>
+                  <input
+                    className={` w-7/12 h-2/6 placeholder:text-gray-800 placeholder:italic p-4 rounded-l-md bg-opacity-50 bg-white backdrop-blur-md`}
+                    placeholder="Escribe..."
+                    ref={input}
+                    onKeyDown={(e) => { if (e.key === "Enter") { sendMessage(); } }}
+                  />
+                  <button
+                    onClick={sendMessage}
+                    className={` w-2/12 h-2/6 bg-blue-500 hover:bg-blue-600 text-white font-semibold uppercase rounded-r-md ${loading || message ? "cursor-not-allowed" : ""}`}
+                  >
+                    Enviar
+                  </button>
+                </div>
               )}
             </div>
-            <div className="flex w-full h-4/6">
+            <div className="flex w-full h-3/6">
             </div>
-            {!isButtonVisible && (
-              <div className={`${isVisible ? "flex" : "hidden"} items-center justify-center w-full h-1/6`}>
-                <input
-                  className={`w-7/12 placeholder:text-gray-800 placeholder:italic p-4 rounded-md bg-opacity-50 bg-white backdrop-blur-md`}
-                  placeholder="Escribe..."
-                  ref={input}
-                  onKeyDown={(e) => { if (e.key === "Enter") { sendMessage(); } }}
-                />
-                <button
-                  onClick={sendMessage}
-                  className={`bg-blue-500 hover:bg-blue-600 text-white p-4 px-10 font-semibold uppercase rounded-md ${loading || message ? "cursor-not-allowed opacity-80" : ""}`}
-                >
-                  Enviar
-                </button>
+            <div className={`flex flex-col items-center justify-center w-full h-2/6`}>
+              <div className="flex flex-col items-center justify-end w-full h-4/6">
+                {transcript && (
+                  <>
+                    <div className="flex px-4 py-2 mx-16 rounded-2xl bg-black bg-opacity-40 text-white items-center justify-center">{transcript}</div>
+                    <div className="flex w-1/12 h-1/6 bg-black bg-opacity-40" style={{ clipPath: 'polygon(50% 100%, 20% 0%, 80% 0%)' }}></div>
+                  </>
+                )}
               </div>
-            )}
+              <div className="flex items-start justify-center w-full h-2/6">
+                <div className="flex w-1/12 h-3/6">
+                  <button
+                    onClick={() => {
+                      setIsClicked(true);
+                      startListeningHandler();
+                    }}
+                    className={`flex w-full h-full bg-blue-500 text-white items-center justify-center rounded-full shadow-lg hover:bg-blue-700 transition-colors duration-300 ${isClicked ? 'animate-pulse' : ''}`}
+                  >
+                    <div className="w-5/12 h-2/6">
+                      {isClicked ? <FaMicrophone className="w-full h-full" /> : <FaMicrophoneSlash className="w-full h-full" />}
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
           {!matriculaValid ? (
             <div className="flex flex-col items-center justify-center w-3/5">
@@ -367,7 +568,7 @@ export const UI = ({ hidden, ...props }) => {
                 </div>
                 <div className="w-2/5 flex flex-col items-center">
                   <form
-                    onSubmit={handleFormSubmit}
+                    onSubmit={mandarMatricula}
                     className="flex items-center justify-between"
                   >
                     <input
@@ -393,7 +594,7 @@ export const UI = ({ hidden, ...props }) => {
                         }
                       }}
                     />
-                    <button className="bg-blue-500 hover:bg-blue-600 text-white w-14 h-full flex items-center justify-center">
+                    <button ref={buttonRef} className="bg-blue-500 hover:bg-blue-600 text-white w-14 h-full flex items-center justify-center">
                       <FaCheck />
                     </button>
                   </form>
@@ -447,21 +648,21 @@ export const UI = ({ hidden, ...props }) => {
                         </ul>
                       </div>
                     </div>
-                      <button
-                        className="bg-blue-500 hover:bg-blue-600 text-white w-11/12 flex items-center justify-center text-2xl uppercase rounded-md"
-                        onClick={handleCreateReservation}
-                      >
-                        Confirmar
-                      </button>
+                    <button
+                      className="bg-blue-500 hover:bg-blue-600 text-white w-11/12 flex items-center justify-center text-2xl uppercase rounded-md"
+                      onClick={handleCreateReservation}
+                    >
+                      reservar
+                    </button>
                   </div>
                 )}
               </div>
               <div className="border border-blue-800 flex flex-col items-center justify-center w-8/12 h-5/6 bg-opacity-50 bg-white backdrop-blur-md rounded-r-md">
                 {reservationCreated ? (
-                    <div className="w-full h-full flex flex-col justify-center items-center">
-                      <FaCheckCircle className="checkmark-animation" size={50} color="blue" />
-                      <h1 className="text-animation">RESERVACIÓN CREADA CON ÉXITO</h1>
-                    </div>
+                  <div className="w-full h-full flex flex-col justify-center items-center">
+                    <FaCheckCircle className="checkmark-animation" size={50} color="blue" />
+                    <h1 className="text-animation">RESERVACIÓN CREADA CON ÉXITO</h1>
+                  </div>
                 ) : (
                   <>
                     <div className="w-full h-full flex justify-center items-center">
@@ -652,11 +853,20 @@ export const UI = ({ hidden, ...props }) => {
       ) : (
         <div style={{ position: 'relative' }} className="flex justify-start w-full h-full">
           <div className="w-8/12 h-full grid grid-cols-1">
-            <div
-              className="bg-cover bg-center"
-              style={{ backgroundImage: `url(${posterImages[currentImageIndex].file})` }}
-            >
-            </div>
+            {posterImages[currentImageIndex]?.file ? (
+              <div
+                className="bg-cover bg-center"
+                style={{ backgroundImage: `url(${posterImages[currentImageIndex].file})` }}
+              >
+              </div>
+            ) : (
+              <div
+                className="bg-white text-black flex items-center justify-center"
+                style={{ height: '100%', width: '100%' }}
+              >
+                Error al cargar las imagenes...
+              </div>
+            )}
           </div>
           <div style={{ position: 'absolute', bottom: 0, right: 0 }} className="flex flex-col justify-center items-center h-full w-6/12">
             <div className="flex w-full h-1/6 relative">
@@ -708,8 +918,7 @@ export const UI = ({ hidden, ...props }) => {
                 height: '100%',
                 backgroundColor: '#014ad1',
                 position: 'relative',
-                clipPath: 'polygon(10% 100%, 100% 100%, 100% 0, 20% 0)',
-                border: '0.1px solid black',
+                clipPath: 'polygon(10% 100%, 100% 100%, 100% 0, 20% 0)'
               }}>
                 <ReservationBanner />
               </div>
@@ -742,21 +951,32 @@ export const UI = ({ hidden, ...props }) => {
                 zIndex: 3
               }}>
               </div>
-                <div style={{
-                  width: '100%',
-                  height: '100%',
-                  backgroundColor: '#002c7f',
-                  position: 'absolute',
-                  clipPath: 'polygon(15% 100%, 65% 100%, 80% 0, 30% 0)',
-                  zIndex: 4,
-                }}>
+              <div style={{
+                width: '100%',
+                height: '100%',
+                backgroundColor: '#002c7f',
+                position: 'absolute',
+                clipPath: 'polygon(15% 100%, 65% 100%, 80% 0, 30% 0)',
+                zIndex: 4,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center'
+              }}>
+                <div className="flex flex-col items-start justify-center h-full w-full">
+                  {data.map((item, index) => (
+                    <div key={index} style={{ marginLeft: `${30 - index * 2}%` }} className="animate flex items-center justify-center w-6/12 h-1/6 text-center text-white">
+                      <div className="flex h-5/6 w-6/12 items-center justify-center whitespace-nowrap font-bold">{item.nombre}</div>
+                      <div className="flex border-l border-white h-3/6 w-6/12 items-center justify-center whitespace-nowrap">{item.horario}</div>
+                    </div>
+                  ))}
                 </div>
+              </div>
               <div style={{
                 width: '100%',
                 height: '100%',
                 backgroundColor: 'black',
                 position: 'absolute',
-                clipPath: 'polygon(10% 0%, 77.8% 15%, 80% 0%, 0% 0%)',
+                clipPath: 'polygon(10% 0%, 79.3% 5%, 80% 0%, 0% 0%)',
                 zIndex: 5,
                 opacity: 0.5
               }}>
