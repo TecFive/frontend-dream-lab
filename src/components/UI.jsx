@@ -40,6 +40,9 @@ export const UI = ({ hidden, ...props }) => {
     "Meeting Room",
     "Lego Room",
     "VR Room",
+    "New Horizons",
+    "Graveyard",
+    "Dimension Forge"
   ];
 
   const input = useRef();
@@ -55,9 +58,6 @@ export const UI = ({ hidden, ...props }) => {
   const [selectedCard, setSelectedCard] = useState(null);
   const [hoverIndex, setHoverIndex] = React.useState(null);
   const [showAvatarOnly, setShowAvatarOnly] = useState(false);
-  const [selectedRoomId, setSelectedRoomId] = useState(null);
-  const [selected, setSelected] = useState({});
-  const [selectedLab, setSelectedLab] = useState(null);
   const [reservationCreated, setReservationCreated] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [posterImages, setPosterImages] = useState([]);
@@ -70,6 +70,106 @@ export const UI = ({ hidden, ...props }) => {
   const { transcript, listening, resetTranscript, browserSupportsSpeechRecognition } = useSpeechRecognition();
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
+  const [selected, setSelected] = useState({});
+  const [selectedLab, setSelectedLab] = useState(null);
+  const [availableEquipments, setAvailableEquipments] = useState([]);
+  const [selectedRoomId, setSelectedRoomId] = useState(null);
+  const[counts, setCounts] = useState({
+    'LEGO': 0,
+    'VR Headset': 0,
+    'PC': 0,
+    'Projector': 0,
+    'Whiteboard': 0
+  });
+
+  const labToEquipments = {
+    "Lego Room": ["LEGO", "PC"],
+    "VR Room": ["VR Headset"],
+    "PC Room": ["VR Headset"],
+    "Meeting Room": ["Whiteboard", "Projector"],
+    "Electric Garage": ["Whiteboard", "Projector"],
+    "PCB Factory": ["VR Headset"],
+    "New Horizons": ["Whiteboard", "Projector"],
+    "Graveyard": ["VR Headset"],
+    "Dimension Forge": ["LEGO", "PC"]
+  };
+
+  useEffect(() => {
+    setAvailableEquipments(labToEquipments[selectedLab] || []);
+  }, [selectedLab]);
+
+  const incrementCount = () => {
+    if (selected) {
+      setCounts(prevCounts => ({
+        ...prevCounts,
+        [selected]: prevCounts[selected] < 10 ? prevCounts[selected] + 1 : prevCounts[selected]
+      }));
+    }
+  };
+
+  const decrementCount = () => {
+    if (selected) {
+      setCounts(prevCounts => ({
+        ...prevCounts,
+        [selected]: prevCounts[selected] > 0 ? prevCounts[selected] - 1 : prevCounts[selected]
+      }));
+    }
+  };
+
+  const textToNumber = (text) => {
+    const numbers = {
+      'un': 1,
+      'una': 1,
+      'dos': 2,
+      'tres': 3,
+      'cuatro': 4,
+      'cinco': 5,
+      'seis': 6,
+      'siete': 7,
+      'ocho': 8,
+      'nueve': 9,
+      'diez': 10
+    };
+    const number = parseInt(text);
+    return isNaN(number) ? numbers[text.toLowerCase()] || 0 : number;
+  };
+
+  useEffect(() => {
+    if (!selectedLab) {
+      console.error("No hay una sala seleccionada");
+      return;
+    }
+
+    const equipmentRegex = /(\d+|[a-záéíóúñ]+) ([a-záéíóúñ]+)/i;
+    const match = transcript.toLowerCase().match(equipmentRegex);
+    if (match) {
+      const quantity = textToNumber(match[1]);
+      let equipment = match[2];
+      if (['pizarrón', 'pizarrones'].includes(equipment)) {
+        equipment = 'Whiteboard';
+      } else if (['proyector', 'proyectores'].includes(equipment)) {
+        equipment = 'Projector';
+      } else if (['lego', 'legos'].includes(equipment)) {
+        equipment = 'LEGO';
+      } else if (['lente', 'lentes'].includes(equipment)) {
+        equipment = 'VR Headset';
+      } else if (['computadora', 'computadoras', 'PC', 'pc'].includes(equipment)) {
+        equipment = 'PC';
+      }
+      if (Object.keys(counts).includes(equipment)) {
+        if (labToEquipments[selectedLab].includes(equipment)) {
+          setCounts(prevCounts => ({
+            ...prevCounts,
+            [equipment]: quantity
+          }));
+        } else {
+          console.error(`El equipo ${equipment} no está disponible en la sala seleccionada`);
+        }
+      } else {
+        console.error(`El equipo ${equipment} no está disponible`);
+      }
+    }
+  }, [transcript, selectedLab]);
 
   const times = [];
   for (let i = 0; i < 24; i++) {
@@ -123,6 +223,9 @@ export const UI = ({ hidden, ...props }) => {
         setStartTime(startTime);
         setEndTime(endTime);
         selectTime({ start: startTime, end: endTime });
+        setTimeout(() => {
+          handleQuestionClick(currentQuestionIndex + 1);
+        }, 2000);
       } else {
         let unavailableTimes = [];
         if (!times.includes(startTime)) unavailableTimes.push(startTime);
@@ -130,8 +233,6 @@ export const UI = ({ hidden, ...props }) => {
         console.error(`Los horarios ${unavailableTimes.join(' y ')} no están disponibles`);
       }
     }
-    let timesString = times.join(', ');
-    console.log(`Los horarios disponibles son: ${timesString}`);
   }, [transcript]);
 
   const mandarMatricula = (e) => {
@@ -176,7 +277,9 @@ export const UI = ({ hidden, ...props }) => {
         today.setHours(0, 0, 0, 0);
         if (date >= today) {
           setSelectedDate(date);
-          handleQuestionClick(currentQuestionIndex + 1);
+          setTimeout(() => {
+            handleQuestionClick(currentQuestionIndex + 1);
+          }, 2000);
         }
       }
     }
@@ -192,6 +295,13 @@ export const UI = ({ hidden, ...props }) => {
         setSelectedCard(index);
         setSelectedRoomId(roomIds[cardNames[index]]);
         setSelectedLab(cardNames[index]);
+        setCounts({
+          'LEGO': 0,
+          'VR Headset': 0,
+          'PC': 0,
+          'Projector': 0,
+          'Whiteboard': 0
+        });
       }
     }
   }, [transcript, cardNames]);
@@ -275,6 +385,11 @@ export const UI = ({ hidden, ...props }) => {
   }, []);
 
   const handleCreateReservation = async () => {
+    if (!selectedRoomId) {
+      alert("Por favor, selecciona una sala antes de crear la reserva.");
+      return;
+    }
+
     const startDate = new Date(selectedDate);
     const [startHours, startMinutes] = startTime.split(':');
     startDate.setHours(startHours, startMinutes);
@@ -289,26 +404,24 @@ export const UI = ({ hidden, ...props }) => {
 
     const payload = {
       room_id: selectedRoomId,
-      start_date: startDate.toISOString().replace('T', ' ').slice(0, -1),
-      end_date: endDate.toISOString().replace('T', ' ').slice(0, -1),
+      start_date: startDate.toISOString().slice(0, 16).replace('T', ' '),
+      end_date: endDate.toISOString().slice(0, 16).replace('T', ' '),
       reserved_equipment: reservedEquipment,
-      comments: ""
+      comments: "",
+      status: "6614aaed6d294f5d44008695"
     }
 
     console.log(payload);
 
-    setReservationCreated(true)
-
-    setIsVisible(true);
-  };
-
-  const labToEquipments = {
-    "Lego Room": ["LEGO", "PC"],
-    "VR Room": ["VR Headset"],
-    "PC Room": ["VR Headset"],
-    "Meeting Room": ["Whiteboard", "Projector"],
-    "Electric Garage": ["Whiteboard", "Projector"],
-    "PCB Factory": ["VR Headset"],
+    try {
+      await axiosInstance.post('/reservations/', payload);
+      alert("¡Reservacion creada con exito!");
+      setReservationCreated(true);
+      setIsVisible(true);
+    } catch (error) {
+      console.error(error.response || error);
+      alert(error);
+    }
   };
 
   const teamIcons = {
@@ -319,38 +432,12 @@ export const UI = ({ hidden, ...props }) => {
     'Whiteboard': <FaChalkboardTeacher />
   };
 
-  const [counts, setCounts] = useState({
-    'LEGO': 0,
-    'VR Headset': 0,
-    'PC': 0,
-    'Projector': 0,
-    'Whiteboard': 0
-  });
-
   const equipmentIds = {
     "LEGO": "6614aaed6d294f5d4400869c",
     "VR Headset": "6614aaed6d294f5d4400869d",
     "PC": "6614aaed6d294f5d4400869e",
     "Projector": "6614aaed6d294f5d4400869f",
     "Whiteboard": "6614aaed6d294f5d4400869g",
-  };
-
-  const incrementCount = () => {
-    if (selected) {
-      setCounts(prevCounts => ({
-        ...prevCounts,
-        [selected]: prevCounts[selected] < 10 ? prevCounts[selected] + 1 : prevCounts[selected]
-      }));
-    }
-  };
-
-  const decrementCount = () => {
-    if (selected) {
-      setCounts(prevCounts => ({
-        ...prevCounts,
-        [selected]: prevCounts[selected] > 0 ? prevCounts[selected] - 1 : prevCounts[selected]
-      }));
-    }
   };
 
   const toggleSelectNew = (newSelection) => {
@@ -361,7 +448,9 @@ export const UI = ({ hidden, ...props }) => {
     if (selectedCard !== null) {
       input.current.value = "Laboratorio " + cardNames[selectedCard];
       sendMessage();
-      handleQuestionClick(currentQuestionIndex + 1);
+      setTimeout(() => {
+        handleQuestionClick(currentQuestionIndex + 1);
+      }, 2000);
     }
   }, [selectedCard]);
 
@@ -625,6 +714,7 @@ export const UI = ({ hidden, ...props }) => {
                       <div className="flex flex-col justify-start h-3/5">
                         <ul className="list-disc list-inside">
                           <li>{cardNames[selectedCard] ? cardNames[selectedCard] : "Sin sala"}</li>
+                          <li> {selectedRoomId} </li>
                           <li>
                             {startTime || endTime
                               ? `${startTime ? ` ${convertTo12hr(startTime)}` : ""} ${endTime ? `- ${convertTo12hr(endTime)}` : ""}`
@@ -637,7 +727,7 @@ export const UI = ({ hidden, ...props }) => {
                               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
                                 {Object.entries(counts).map(([team, count]) =>
                                   count > 0 ? (
-                                    <div key={team} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                                    <div key={team} style={{ display: 'flex', alignItems: 'center', justifyContent: 'start', width: '100%' }}>
                                       {teamIcons[team]} <span style={{ marginLeft: '5px' }}>x {count}</span>
                                     </div>
                                   ) : null
@@ -676,7 +766,9 @@ export const UI = ({ hidden, ...props }) => {
                                 minDate={new Date()}
                                 onChange={(date) => {
                                   setSelectedDate(date);
-                                  handleQuestionClick(currentQuestionIndex + 1);
+                                  setTimeout(() => {
+                                    handleQuestionClick(currentQuestionIndex + 1);
+                                  }, 2000);
                                   const formattedDate = date.toLocaleDateString('en-GB');
                                   input.current.value = formattedDate;
                                   sendMessage();
@@ -703,6 +795,36 @@ export const UI = ({ hidden, ...props }) => {
                                 }}
                               />
                             );
+                          case "Laboratorios":
+                            return (
+                              <div className="w-11/12 h-5/6 grid grid-cols-2 gap-4">
+                                {images.map((image, index) => (
+                                  <div
+                                    key={index}
+                                    className="relative bg-cover bg-center text-center flex w-auto h-auto items-center justify-center rounded-md"
+                                    style={{ backgroundImage: `url(${image})` }}
+                                    onClick={() => {
+                                      setSelectedCard(index);
+                                      if (roomIds.hasOwnProperty(cardNames[index])) {
+                                        setSelectedRoomId(roomIds[cardNames[index]]);
+                                      } else {
+                                        console.error(`No room ID found for ${cardNames[index]}`);
+                                      }
+                                      setSelectedLab(cardNames[index]);
+                                      setCounts({
+                                        'LEGO': 0,
+                                        'VR Headset': 0,
+                                        'PC': 0,
+                                        'Projector': 0,
+                                        'Whiteboard': 0
+                                      });
+                                    }}
+                                  >
+                                    <div className="absolute bottom-0 w-full flex items-center justify-center bg-blue-600 text-white rounded-b-md">{cardNames[index]}</div>
+                                  </div>
+                                ))}
+                              </div>
+                            );
                           case "Horario":
                             return (
                               <div className="w-11/12 h-5/6 grid grid-cols-4 gap-2">
@@ -727,7 +849,9 @@ export const UI = ({ hidden, ...props }) => {
                                         } else if (!endTime || time === endTime) {
                                           setEndTime(time);
                                           if (time !== startTime) {
-                                            handleQuestionClick(currentQuestionIndex + 1);
+                                            setTimeout(() => {
+                                              handleQuestionClick(currentQuestionIndex + 1);
+                                            }, 2000);
                                           }
                                         } else if (startTime && endTime) {
                                           setStartTime(time);
@@ -742,33 +866,14 @@ export const UI = ({ hidden, ...props }) => {
                                 })}
                               </div>
                             );
-                          case "Laboratorios":
-                            return (
-                              <div className="w-11/12 h-5/6 grid grid-cols-2 gap-4">
-                                {images.map((image, index) => (
-                                  <div
-                                    key={index}
-                                    className="relative bg-cover bg-center text-center flex w-auto h-auto items-center justify-center rounded-md"
-                                    style={{ backgroundImage: `url(${image})` }}
-                                    onClick={() => {
-                                      setSelectedCard(selectedCard === index ? null : index);
-                                      setSelectedRoomId(roomIds[cardNames[index]]);
-                                      setSelectedLab(cardNames[index]);
-                                    }}
-                                  >
-                                    <div className="absolute bottom-0 w-full flex items-center justify-center bg-blue-600 text-white rounded-b-md">{cardNames[index]}</div>
-                                  </div>
-                                ))}
-                              </div>
-                            );
                           case "Equipos":
                             return (
                               <div className="w-full h-full flex flex-col items-center justify-center">
                                 <div className="flex justify-center items-center w-full h-2/6">
                                   <div className="flex justify-center items-center h-full w-4/12">
                                     <div
-                                      className={`flex flex-col justify-center items-center h-4/6 w-7/12 rounded-xl ${selected === 'LEGO' ? 'bg-blue-500' : (!labToEquipments[selectedLab]?.includes('LEGO') ? 'bg-red-500' : '')}`}
-                                      onClick={() => labToEquipments[selectedLab]?.includes('LEGO') && toggleSelectNew('LEGO')}
+                                      className={`flex flex-col justify-center items-center h-4/6 w-7/12 rounded-xl ${selected === 'LEGO' ? 'bg-blue-500' : (!availableEquipments.includes('LEGO') ? 'bg-red-500' : '')}`}
+                                      onClick={() => availableEquipments.includes('LEGO') && setSelected('LEGO')}
                                     >
                                       <TbLego style={{ fontSize: '5em', color: selected === 'LEGO' ? 'white' : 'black' }} />
                                       <span style={{ color: selected === 'LEGO' ? 'white' : 'black' }}>LEGO</span>
@@ -786,7 +891,7 @@ export const UI = ({ hidden, ...props }) => {
                                     </div>
                                   </div>
                                   <div className="h-full w-4/12 flex flex-col items-center justify-center p-4 rounded-lg">
-                                    <p className="text-2xl font-bold mb-4">{selected ? counts[selected] : 0}</p>
+                                    <p className="text-2xl font-bold mb-4">{counts[selected] || 0}</p>
                                     <div>
                                       <button className="bg-green-500 text-white text-2xl px-4 py-2 rounded-xl mr-2" onClick={incrementCount}>+</button>
                                       <button className="bg-red-500 text-white text-2xl px-4 py-2 rounded-xl" onClick={decrementCount}>-</button>
