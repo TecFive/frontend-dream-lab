@@ -74,7 +74,9 @@ export const UI = ({ hidden, ...props }) => {
   const [selectedLab, setSelectedLab] = useState(null);
   const [availableEquipments, setAvailableEquipments] = useState([]);
   const [selectedRoomId, setSelectedRoomId] = useState(null);
-  const[counts, setCounts] = useState({
+  const [roomImages, setRoomImages] = useState({});
+  const [equipmentImages, setEquipmentImages] = useState({});
+  const [counts, setCounts] = useState({
     'LEGO': 0,
     'VR Headset': 0,
     'PC': 0,
@@ -136,7 +138,7 @@ export const UI = ({ hidden, ...props }) => {
 
   useEffect(() => {
     if (!selectedLab) {
-      console.error("No hay una sala seleccionada");
+      // console.error("No hay una sala seleccionada");
       return;
     }
 
@@ -163,10 +165,10 @@ export const UI = ({ hidden, ...props }) => {
             [equipment]: quantity
           }));
         } else {
-          console.error(`El equipo ${equipment} no está disponible en la sala seleccionada`);
+          // console.error(`El equipo ${equipment} no está disponible en la sala seleccionada`);
         }
       } else {
-        console.error(`El equipo ${equipment} no está disponible`);
+        // console.error(`El equipo ${equipment} no está disponible`);
       }
     }
   }, [transcript, selectedLab]);
@@ -185,7 +187,7 @@ export const UI = ({ hidden, ...props }) => {
       time = JSON.stringify(time);
     }
     if (typeof time !== 'string') {
-      console.error(`Invalid time format. Expected a string but received ${typeof time}.`);
+      // console.error(`Invalid time format. Expected a string but received ${typeof time}.`);
       return "";
     }
     if (!time) return "";
@@ -230,7 +232,7 @@ export const UI = ({ hidden, ...props }) => {
         let unavailableTimes = [];
         if (!times.includes(startTime)) unavailableTimes.push(startTime);
         if (!times.includes(endTime)) unavailableTimes.push(endTime);
-        console.error(`Los horarios ${unavailableTimes.join(' y ')} no están disponibles`);
+        // console.error(`Los horarios ${unavailableTimes.join(' y ')} no están disponibles`);
       }
     }
   }, [transcript]);
@@ -371,7 +373,7 @@ export const UI = ({ hidden, ...props }) => {
           const images = response.data.data.filter(post => post.visible).map(post => ({
             file: post.file
           }));
-           console.log('Formatted images:', images);
+          // console.log('Formatted images:', images);
           setPosterImages(images);
           setError(null);
         } else {
@@ -383,6 +385,93 @@ export const UI = ({ hidden, ...props }) => {
         setError('Error al cargar las imágenes.');
       });
   }, []);
+
+  useEffect(() => {
+    axiosInstance.get('/rooms/')
+      .then(response => {
+        if (Array.isArray(response.data.data)) {
+          const images = {};
+          response.data.data.forEach(room => {
+            images[room.name] = room.image;
+          });
+          setRoomImages(images);
+          console.log('Todas las salas ya se les asignó su imagen.');
+          setError(null);
+        } else {
+          throw new Error('Error');
+        }
+      })
+      .catch(error => {
+        setError('Error al cargar las imágenes de las salas.');
+      });
+  }, []);
+
+  const roomIds = {
+    "Lego Room": "6614aaed6d294f5d44008698",
+    "VR Room": "6614aaed6d294f5d44008699",
+    "PC Room": "6614aaed6d294f5d4400869a",
+    "Electric Garage": "6635064964d1e813a40d1d41",
+    "PCB Factory": "6635064964d1e813a40d1d44",
+    "Meeting Room": "6614aaed6d294f5d4400869b",
+    "New Horizons": "6635064964d1e813a40d1d45",
+    "Graveyard": "6635064964d1e813a40d1d46",
+    "Dimension Forge": "6635064964d1e813a40d1d47"
+  };
+
+  useEffect(() => {
+    const equipmentIds = {
+      "LEGO": "6614aaed6d294f5d4400869c",
+      "VR Headset": "6614aaed6d294f5d4400869d",
+      "PC": "6614aaed6d294f5d4400869e",
+      "Projector": "6614aaed6d294f5d4400869f",
+      "Whiteboard": "6614aaed6d294f5d4400869g",
+    };
+
+    axiosInstance.get('/equipment/')
+      .then(response => {
+        if (Array.isArray(response.data.data)) {
+          const images = {};
+          response.data.data.forEach(equipment => {
+            const equipmentName = equipment.name.toUpperCase();
+            if (Object.keys(equipmentIds).map(key => key.toUpperCase()).includes(equipmentName)) {
+              images[equipment.name] = equipment.image;
+              console.log(`El equipo ${equipment.name} tiene la imagen ${equipment.image}`);
+            }
+          });
+          setEquipmentImages(images);
+          setError(null);
+
+          // Imprimir mensajes de asignación de imágenes
+          Object.keys(images).forEach(equipment => {
+            console.log(`A ${equipment} se le ha asignado una imagen.`);
+          });
+
+          // Imprimir el objeto equipmentImages completo
+          console.log('equipmentImages:', images);
+        } else {
+          throw new Error('Error');
+        }
+      })
+      .catch(error => {
+        setError('Error al cargar las imágenes de los equipos.');
+      });
+  }, []);
+
+  const teamIcons = {
+    'LEGO': <TbLego />,
+    'VR Headset': <BsHeadsetVr />,
+    'PC': <GiLaptop />,
+    'Projector': <BsProjector />,
+    'Whiteboard': <FaChalkboardTeacher />
+  };
+
+  const equipmentIds = {
+    "LEGO": "6614aaed6d294f5d4400869c",
+    "VR Headset": "6614aaed6d294f5d4400869d",
+    "PC": "6614aaed6d294f5d4400869e",
+    "Projector": "6614aaed6d294f5d4400869f",
+    "Whiteboard": "6614aaed6d294f5d4400869g",
+  };
 
   const handleCreateReservation = async () => {
     if (!selectedRoomId) {
@@ -419,25 +508,9 @@ export const UI = ({ hidden, ...props }) => {
       setReservationCreated(true);
       setIsVisible(true);
     } catch (error) {
-      console.error(error.response || error);
+      // console.error(error.response || error);
       alert(error);
     }
-  };
-
-  const teamIcons = {
-    'LEGO': <TbLego />,
-    'VR Headset': <BsHeadsetVr />,
-    'PC': <GiLaptop />,
-    'Projector': <BsProjector />,
-    'Whiteboard': <FaChalkboardTeacher />
-  };
-
-  const equipmentIds = {
-    "LEGO": "6614aaed6d294f5d4400869c",
-    "VR Headset": "6614aaed6d294f5d4400869d",
-    "PC": "6614aaed6d294f5d4400869e",
-    "Projector": "6614aaed6d294f5d4400869f",
-    "Whiteboard": "6614aaed6d294f5d4400869g",
   };
 
   const toggleSelectNew = (newSelection) => {
@@ -460,15 +533,6 @@ export const UI = ({ hidden, ...props }) => {
       sendMessage();
     }
   }, [isButtonVisible]);
-
-  const roomIds = {
-    "Lego Room": "6614aaed6d294f5d44008698",
-    "VR Room": "6614aaed6d294f5d44008699",
-    "PC Room": "6614aaed6d294f5d4400869a",
-    "Electric Garage": "6635064964d1e813a40d1d41",
-    "PCB Factory": "6635064964d1e813a40d1d44",
-    "Meeting Room": "6614aaed6d294f5d4400869b",
-  };
 
   const handleDropdownChange = (e) => {
     setRole(e.target.value);
@@ -536,16 +600,16 @@ export const UI = ({ hidden, ...props }) => {
   };
 
   useEffect(() => {
-    if (posterImages.length === 0) return; // Skip if there are no images
+    if (posterImages.length === 0) return;
 
     const timer = setInterval(() => {
-        setCurrentImageIndex(prevIndex => (prevIndex + 1) % posterImages.length);
+      setCurrentImageIndex(prevIndex => (prevIndex + 1) % posterImages.length);
     }, 8000);
 
     return () => {
-        clearInterval(timer);
+      clearInterval(timer);
     };
-}, [posterImages.length]);
+  }, [posterImages.length]);
 
 
   const sendMessage = () => {
@@ -717,7 +781,6 @@ export const UI = ({ hidden, ...props }) => {
                       <div className="flex flex-col justify-start h-3/5">
                         <ul className="list-disc list-inside">
                           <li>{cardNames[selectedCard] ? cardNames[selectedCard] : "Sin sala"}</li>
-                          <li> {selectedRoomId} </li>
                           <li>
                             {startTime || endTime
                               ? `${startTime ? ` ${convertTo12hr(startTime)}` : ""} ${endTime ? `- ${convertTo12hr(endTime)}` : ""}`
@@ -800,20 +863,20 @@ export const UI = ({ hidden, ...props }) => {
                             );
                           case "Laboratorios":
                             return (
-                              <div className="w-11/12 h-5/6 grid grid-cols-2 gap-4">
-                                {images.map((image, index) => (
+                              <div className="w-11/12 h-5/6 grid grid-cols-3 gap-4">
+                                {cardNames.map((name, index) => (
                                   <div
                                     key={index}
-                                    className="relative bg-cover bg-center text-center flex w-auto h-auto items-center justify-center rounded-md"
-                                    style={{ backgroundImage: `url(${image})` }}
+                                    className={`relative bg-cover bg-center text-center flex w-auto h-auto items-center justify-center rounded-md transform transition duration-500 ease-in-out ${selectedCard === index ? 'scale-110 border-4 border-fuchsia-500' : ''}`}
+                                    style={roomImages[name] ? { backgroundImage: `url(${roomImages[name]})` } : {}}
                                     onClick={() => {
                                       setSelectedCard(index);
-                                      if (roomIds.hasOwnProperty(cardNames[index])) {
-                                        setSelectedRoomId(roomIds[cardNames[index]]);
+                                      if (roomIds.hasOwnProperty(name)) {
+                                        setSelectedRoomId(roomIds[name]);
                                       } else {
-                                        console.error(`No room ID found for ${cardNames[index]}`);
+                                        // console.error(`No room ID found for ${name}`);
                                       }
-                                      setSelectedLab(cardNames[index]);
+                                      setSelectedLab(name);
                                       setCounts({
                                         'LEGO': 0,
                                         'VR Headset': 0,
@@ -823,7 +886,8 @@ export const UI = ({ hidden, ...props }) => {
                                       });
                                     }}
                                   >
-                                    <div className="absolute bottom-0 w-full flex items-center justify-center bg-blue-600 text-white rounded-b-md">{cardNames[index]}</div>
+                                    <div className="absolute bottom-0 w-full flex items-center justify-center bg-blue-600 text-white rounded-b">{name}</div>
+                                    {!roomImages[name] && <div className="absolute inset-0 flex items-center justify-center text-lg text-gray-500">Imagen no disponible</div>}
                                   </div>
                                 ))}
                               </div>
@@ -846,7 +910,7 @@ export const UI = ({ hidden, ...props }) => {
                                         : "bg-gray-300 rounded-md hover:bg-blue-500 hover:text-white"
                                         }`}
                                       onClick={() => {
-                                        if (!startTime || time === startTime) {
+                                        if ((!startTime || time === startTime) || (startTime && endTime)) {
                                           setStartTime(time);
                                           setEndTime(null);
                                         } else if (!endTime || time === endTime) {
@@ -856,12 +920,10 @@ export const UI = ({ hidden, ...props }) => {
                                               handleQuestionClick(currentQuestionIndex + 1);
                                             }, 2000);
                                           }
-                                        } else if (startTime && endTime) {
-                                          setStartTime(time);
-                                          setEndTime(null);
                                         }
                                         selectTime(time);
                                       }}
+                                      disabled={startTime && !endTime && time < startTime}
                                     >
                                       {time12hr}
                                     </button>
@@ -875,22 +937,28 @@ export const UI = ({ hidden, ...props }) => {
                                 <div className="flex justify-center items-center w-full h-2/6">
                                   <div className="flex justify-center items-center h-full w-4/12">
                                     <div
-                                      className={`flex flex-col justify-center items-center h-4/6 w-7/12 rounded-xl ${selected === 'LEGO' ? 'bg-blue-500' : (!availableEquipments.includes('LEGO') ? 'bg-red-500' : '')}`}
+                                      className={`flex flex-col justify-center items-center h-4/6 w-7/12 rounded-xl ${selected === 'LEGO' ? 'border-fuchsia-500 border-4' : (!availableEquipments.includes('LEGO') ? 'border-red-500 border-4' : 'border-blue-500 border-4')}`}
                                       onClick={() => availableEquipments.includes('LEGO') && setSelected('LEGO')}
+                                      style={equipmentImages['Lego'] ? { backgroundImage: `url(${equipmentImages['Lego']})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' } : {}}
                                     >
-                                      <TbLego style={{ fontSize: '5em', color: selected === 'LEGO' ? 'white' : 'black' }} />
-                                      <span style={{ color: selected === 'LEGO' ? 'white' : 'black' }}>LEGO</span>
+                                      {!equipmentImages['Lego'] && <TbLego style={{ fontSize: '5em', color: selected === 'LEGO' ? 'white' : 'black' }} />}
+                                      <div style={{ marginTop: 'auto', backgroundColor: selected === 'LEGO' ? 'fuchsia' : (!availableEquipments.includes('LEGO') ? 'red' : 'blue'), width: '100%', padding: '2% 0', display: 'flex', justifyContent: 'center', borderBottomLeftRadius: '0.5rem', borderBottomRightRadius: '0.5rem' }}>
+                                        <span style={{ color: 'white' }}>Lego</span>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
                                 <div className="flex justify-around items-center w-full h-2/6">
                                   <div className="flex justify-center items-center h-full w-4/12">
                                     <div
-                                      className={`flex flex-col justify-center items-center h-4/6 w-7/12 rounded-xl ${selected === 'VR Headset' ? 'bg-blue-500' : (!labToEquipments[selectedLab]?.includes('VR Headset') ? 'bg-red-500' : '')}`}
+                                      className={`flex flex-col justify-center items-center h-4/6 w-7/12 rounded-xl ${selected === 'VR Headset' ? 'border-fuchsia-500 border-4' : (!labToEquipments[selectedLab]?.includes('VR Headset') ? 'border-red-500 border-4' : 'border-blue-500 border-4')}`}
                                       onClick={() => labToEquipments[selectedLab]?.includes('VR Headset') && toggleSelectNew('VR Headset')}
+                                      style={equipmentImages['VR Headset'] ? { backgroundImage: `url(${equipmentImages['VR Headset']})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' } : {}}
                                     >
-                                      <BsHeadsetVr style={{ fontSize: '5em', color: selected === 'VR Headset' ? 'white' : 'black' }} />
-                                      <span style={{ color: selected === 'VR Headset' ? 'white' : 'black' }}>VR Headset</span>
+                                      {!equipmentImages['VR Headset'] && <BsHeadsetVr style={{ fontSize: '5em', color: selected === 'VR Headset' ? 'white' : 'black' }} />}
+                                      <div style={{ marginTop: 'auto', backgroundColor: selected === 'VR Headset' ? 'fuchsia' : (!labToEquipments[selectedLab]?.includes('VR Headset') ? 'red' : 'blue'), width: '100%', padding: '2% 0', display: 'flex', justifyContent: 'center', borderBottomLeftRadius: '0.5rem', borderBottomRightRadius: '0.5rem' }}>
+                                        <span style={{ color: 'white' }}>VR Headset</span>
+                                      </div>
                                     </div>
                                   </div>
                                   <div className="h-full w-4/12 flex flex-col items-center justify-center p-4 rounded-lg">
@@ -902,32 +970,41 @@ export const UI = ({ hidden, ...props }) => {
                                   </div>
                                   <div className="flex justify-center items-center h-full w-4/12">
                                     <div
-                                      className={`flex flex-col justify-center items-center h-4/6 w-7/12 rounded-xl ${selected === 'PC' ? 'bg-blue-500' : (!labToEquipments[selectedLab]?.includes('PC') ? 'bg-red-500' : '')}`}
+                                      className={`flex flex-col justify-center items-center h-4/6 w-7/12 rounded-xl ${selected === 'PC' ? 'border-fuchsia-500 border-4' : (!labToEquipments[selectedLab]?.includes('PC') ? 'border-red-500 border-4' : 'border-blue-500 border-4')}`}
                                       onClick={() => labToEquipments[selectedLab]?.includes('PC') && toggleSelectNew('PC')}
+                                      style={equipmentImages['PC'] ? { backgroundImage: `url(${equipmentImages['PC']})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' } : {}}
                                     >
-                                      <GiLaptop style={{ fontSize: '5em', color: selected === 'PC' ? 'white' : 'black' }} />
-                                      <span style={{ color: selected === 'PC' ? 'white' : 'black' }}>PC</span>
+                                      {!equipmentImages['PC'] && <GiLaptop style={{ fontSize: '5em', color: selected === 'PC' ? 'white' : 'black' }} />}
+                                      <div style={{ marginTop: 'auto', backgroundColor: selected === 'PC' ? 'fuchsia' : (!labToEquipments[selectedLab]?.includes('PC') ? 'red' : 'blue'), width: '100%', padding: '2% 0', display: 'flex', justifyContent: 'center', borderBottomLeftRadius: '0.5rem', borderBottomRightRadius: '0.5rem' }}>
+                                        <span style={{ color: 'white' }}>PC</span>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
                                 <div className="flex justify-stretch items-center w-full h-2/6">
                                   <div className="flex justify-end items-center h-full w-5/12">
                                     <div
-                                      className={`flex flex-col justify-center items-center h-4/6 w-6/12 rounded-xl ${selected === 'Projector' ? 'bg-blue-500' : (!labToEquipments[selectedLab]?.includes('Projector') ? 'bg-red-500' : '')}`}
+                                      className={`flex flex-col justify-center items-center h-4/6 w-6/12 rounded-xl ${selected === 'Projector' ? 'border-fuchsia-500 border-4' : (!labToEquipments[selectedLab]?.includes('Projector') ? 'border-red-500 border-4' : 'border-blue-500 border-4')}`}
                                       onClick={() => labToEquipments[selectedLab]?.includes('Projector') && toggleSelectNew('Projector')}
+                                      style={equipmentImages['Projector'] ? { backgroundImage: `url(${equipmentImages['Projector']})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' } : {}}
                                     >
-                                      <BsProjector style={{ fontSize: '5em', color: selected === 'Projector' ? 'white' : 'black' }} />
-                                      <span style={{ color: selected === 'Projector' ? 'white' : 'black' }}>Projector</span>
+                                      {!equipmentImages['Projector'] && <BsProjector style={{ fontSize: '5em', color: selected === 'Projector' ? 'white' : 'black' }} />}
+                                      <div style={{ marginTop: 'auto', backgroundColor: selected === 'Projector' ? 'fuchsia' : (!labToEquipments[selectedLab]?.includes('Projector') ? 'red' : 'blue'), width: '100%', padding: '2% 0', display: 'flex', justifyContent: 'center', borderBottomLeftRadius: '0.5rem', borderBottomRightRadius: '0.5rem' }}>
+                                        <span style={{ color: 'white' }}>Projector</span>
+                                      </div>
                                     </div>
                                   </div>
                                   <div className="h-full w-2/12"></div>
                                   <div className="flex justify-start items-center h-full w-5/12">
                                     <div
-                                      className={`flex flex-col justify-center items-center h-4/6 w-6/12 rounded-xl ${selected === 'Whiteboard' ? 'bg-blue-500' : (!labToEquipments[selectedLab]?.includes('Whiteboard') ? 'bg-red-500' : '')}`}
+                                      className={`flex flex-col justify-center items-center h-4/6 w-6/12 rounded-xl ${selected === 'Whiteboard' ? 'border-fuchsia-500 border-4' : (!labToEquipments[selectedLab]?.includes('Whiteboard') ? 'border-red-500 border-4' : 'border-blue-500 border-4')}`}
                                       onClick={() => labToEquipments[selectedLab]?.includes('Whiteboard') && toggleSelectNew('Whiteboard')}
+                                      style={equipmentImages['Whiteboard'] ? { backgroundImage: `url(${equipmentImages['Whiteboard']})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' } : {}}
                                     >
-                                      <FaChalkboardTeacher style={{ fontSize: '5em', color: selected === 'Whiteboard' ? 'white' : 'black' }} />
-                                      <span style={{ color: selected === 'Whiteboard' ? 'white' : 'black' }}>Whiteboard</span>
+                                      {!equipmentImages['Whiteboard'] && <FaChalkboardTeacher style={{ fontSize: '5em', color: selected === 'Whiteboard' ? 'white' : 'black' }} />}
+                                      <div style={{ marginTop: 'auto', backgroundColor: selected === 'Whiteboard' ? 'fuchsia' : (!labToEquipments[selectedLab]?.includes('Whiteboard') ? 'red' : 'blue'), width: '100%', padding: '2% 0', display: 'flex', justifyContent: 'center', borderBottomLeftRadius: '0.5rem', borderBottomRightRadius: '0.5rem' }}>
+                                        <span style={{ color: 'white' }}>Whiteboard</span>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
@@ -961,29 +1038,29 @@ export const UI = ({ hidden, ...props }) => {
       ) : (
         <div style={{ position: 'relative' }} className="flex justify-start w-full h-full">
           <div className="w-8/12 h-full grid grid-cols-1">
-          {posterImages.length > 0 && currentImageIndex < posterImages.length ? (
-        posterImages[currentImageIndex]?.file ? (
-            <div
-                className="bg-cover bg-center"
-                style={{ backgroundImage: `url(${posterImages[currentImageIndex].file})` }}
-            >
-            </div>
-        ) : (
-            <div
+            {posterImages.length > 0 && currentImageIndex < posterImages.length ? (
+              posterImages[currentImageIndex]?.file ? (
+                <div
+                  className="bg-cover bg-center"
+                  style={{ backgroundImage: `url(${posterImages[currentImageIndex].file})` }}
+                >
+                </div>
+              ) : (
+                <div
+                  className="bg-white text-black flex items-center justify-center"
+                  style={{ height: '100%', width: '100%' }}
+                >
+                  Error al cargar las imagenes...
+                </div>
+              )
+            ) : (
+              <div
                 className="bg-white text-black flex items-center justify-center"
                 style={{ height: '100%', width: '100%' }}
-            >
-                Error al cargar las imagenes...
-            </div>
-        )
-    ) : (
-        <div
-            className="bg-white text-black flex items-center justify-center"
-            style={{ height: '100%', width: '100%' }}
-        >
-            No images available.
-        </div>
-    )}
+              >
+                No images available.
+              </div>
+            )}
           </div>
           <div style={{ position: 'absolute', bottom: 0, right: 0 }} className="flex flex-col justify-center items-center h-full w-6/12">
             <div className="flex w-full h-1/6 relative">
