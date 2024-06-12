@@ -19,8 +19,11 @@ import { FaCheckCircle } from 'react-icons/fa';
 import '../index.css';
 import { FaMicrophone, FaMicrophoneSlash } from "react-icons/fa6";
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
+import { endOfISOWeek, endOfDay, format, subMinutes } from 'date-fns';
+import { div } from "three/examples/jsm/nodes/Nodes.js";
 
 export const UI = ({ hidden, ...props }) => {
+  const [loadingR, setLoadingR] = useState(true);
 
   const initialData = [
     { nombre: 'NOMBRE1', horario: 'HORARIO1' },
@@ -333,35 +336,49 @@ export const UI = ({ hidden, ...props }) => {
   }
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setData(prevData => {
-        const firstItem = prevData[0];
-        return [...prevData.slice(1), firstItem];
-      });
-    }, 5000);
+    if (!loadingR) {
+      const interval = setInterval(() => {
+        setData(prevData => {
+          const firstItem = prevData[0];
+          const nextIndex = (reservations.indexOf(firstItem) + 7) % reservations.length;
+          const nextItem = reservations[nextIndex];
 
-    return () => clearInterval(interval);
-  }, []);
+          return [...prevData.slice(1), nextItem];
+        });
+      }, 5000);
+
+      return () => clearInterval(interval);
+    }
+  }, [reservations, loadingR]);
 
   useEffect(() => {
-    axiosInstance.get("/reservations/")
+    const now = new Date();
+    const startDate = format(subMinutes(now, 15), 'yyyy-MM-dd HH:mm');
+    const endDate = format(endOfISOWeek(now), 'yyyy-MM-dd HH:mm');
+
+    axiosInstance.get(`/admin/reservations/selector/${startDate}/${endDate}`, {
+      params: {
+        start_date: startDate,
+        end_date: endDate,
+      },
+    })
       .then(response => {
-        if (Array.isArray(response.data.data)) {
-          const reservations = response.data.data.map(reservation => {
-            const name = reservation.user.name;
-            const time = `${new Date(reservation.start_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${new Date(reservation.end_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-
-            // console.log(`Nombre: ${name}, Horario: ${time}`);
-
-            return { name, time };
+        if (Array.isArray(response.data)) {
+          const reservationsData = response.data.map(reservation => {
+            const nombre = reservation.user.name;
+            const horario = `${new Date(reservation.start_date).toLocaleTimeString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} - ${new Date(reservation.end_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+            return { nombre, horario };
           });
-          setReservations(reservations);
+          setReservations(reservationsData);
+          setData(reservationsData.slice(0, 7));
+          setLoadingR(false);
         } else {
           throw new Error('La respuesta no es un array.');
         }
       })
       .catch(error => {
-        // console.error('Error fetching reservations:', error);
+        console.error('Error fetching reservations:', error);
+        setLoadingR(false);
       });
   }, []);
 
@@ -1157,10 +1174,10 @@ export const UI = ({ hidden, ...props }) => {
                 justifyContent: 'center'
               }}>
                 <div className="flex flex-col items-start justify-center h-full w-full">
-                  {data.map((item, index) => (
+                {data.map((item, index) => (
                     <div key={index} style={{ marginLeft: `${30 - index * 2}%` }} className="animate flex items-center justify-center w-6/12 h-1/6 text-center text-white">
-                      <div className="flex h-5/6 w-6/12 items-center justify-center whitespace-nowrap font-bold">{item.nombre}</div>
-                      <div className="flex border-l border-white h-3/6 w-6/12 items-center justify-center whitespace-nowrap">{item.horario}</div>
+                      <div className="flex h-5/6 w-6/12 items-center justify-center whitespace-nowrap font-bold text-2xl">{item.nombre}</div>
+                      <div className="flex border-l border-white h-3/6 w-6/12 items-center justify-center whitespace-nowrap text-2xl">{item.horario}</div>
                     </div>
                   ))}
                 </div>
