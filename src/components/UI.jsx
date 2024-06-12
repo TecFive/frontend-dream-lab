@@ -368,10 +368,10 @@ export const UI = ({ hidden, ...props }) => {
       .then(response => {
         // console.log('API response:', response.data);
         if (Array.isArray(response.data.data)) {
-          const images = response.data.data.map(post => ({
+          const images = response.data.data.filter(post => post.visible).map(post => ({
             file: post.file
           }));
-          // console.log('Formatted images:', images);
+           console.log('Formatted images:', images);
           setPosterImages(images);
           setError(null);
         } else {
@@ -536,14 +536,17 @@ export const UI = ({ hidden, ...props }) => {
   };
 
   useEffect(() => {
+    if (posterImages.length === 0) return; // Skip if there are no images
+
     const timer = setInterval(() => {
-      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
+        setCurrentImageIndex(prevIndex => (prevIndex + 1) % posterImages.length);
     }, 8000);
 
     return () => {
-      clearInterval(timer);
+        clearInterval(timer);
     };
-  }, [images]);
+}, [posterImages.length]);
+
 
   const sendMessage = () => {
     const text = input.current.value;
@@ -958,20 +961,29 @@ export const UI = ({ hidden, ...props }) => {
       ) : (
         <div style={{ position: 'relative' }} className="flex justify-start w-full h-full">
           <div className="w-8/12 h-full grid grid-cols-1">
-            {posterImages[currentImageIndex]?.file ? (
-              <div
+          {posterImages.length > 0 && currentImageIndex < posterImages.length ? (
+        posterImages[currentImageIndex]?.file ? (
+            <div
                 className="bg-cover bg-center"
                 style={{ backgroundImage: `url(${posterImages[currentImageIndex].file})` }}
-              >
-              </div>
-            ) : (
-              <div
+            >
+            </div>
+        ) : (
+            <div
                 className="bg-white text-black flex items-center justify-center"
                 style={{ height: '100%', width: '100%' }}
-              >
+            >
                 Error al cargar las imagenes...
-              </div>
-            )}
+            </div>
+        )
+    ) : (
+        <div
+            className="bg-white text-black flex items-center justify-center"
+            style={{ height: '100%', width: '100%' }}
+        >
+            No images available.
+        </div>
+    )}
           </div>
           <div style={{ position: 'absolute', bottom: 0, right: 0 }} className="flex flex-col justify-center items-center h-full w-6/12">
             <div className="flex w-full h-1/6 relative">
