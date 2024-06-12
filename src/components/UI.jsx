@@ -7,20 +7,13 @@ import { BsHeadsetVr, BsProjector } from "react-icons/bs";
 import { MdOutlineVideoSettings } from "react-icons/md";
 import ReactCalendar from "react-calendar";
 import "../index.css";
-import lab3d from "../assets/3dLab.png";
-import labCompu from "../assets/compuLab.jpeg";
-import labElectro from "../assets/electroLab.jpeg";
-import labIos from "../assets/iosLab.jpeg";
-import labServer from "../assets/serverlab.jpeg";
-import labVr from "../assets/vrLab.jpeg";
 import ReservationBanner from './ReservationBanner';
 import axiosInstance from "../hooks/axiosInstance";
 import { FaCheckCircle } from 'react-icons/fa';
 import '../index.css';
 import { FaMicrophone, FaMicrophoneSlash } from "react-icons/fa6";
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
-import { endOfISOWeek, endOfDay, format, subMinutes } from 'date-fns';
-import { div } from "three/examples/jsm/nodes/Nodes.js";
+import { endOfISOWeek, format, subMinutes } from 'date-fns';
 
 export const UI = ({ hidden, ...props }) => {
   const [loadingR, setLoadingR] = useState(true);
@@ -57,7 +50,6 @@ export const UI = ({ hidden, ...props }) => {
   const [isButtonVisible, setButtonVisible] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const images = [lab3d, labCompu, labElectro, labIos, labServer, labVr];
   const [selectedCard, setSelectedCard] = useState(null);
   const [hoverIndex, setHoverIndex] = React.useState(null);
   const [showAvatarOnly, setShowAvatarOnly] = useState(false);
@@ -412,7 +404,7 @@ export const UI = ({ hidden, ...props }) => {
             images[room.name] = room.image;
           });
           setRoomImages(images);
-          console.log('Todas las salas ya se les asignó su imagen.');
+          // console.log('Todas las salas ya se les asignó su imagen.');
           setError(null);
         } else {
           throw new Error('Error');
@@ -452,19 +444,15 @@ export const UI = ({ hidden, ...props }) => {
             const equipmentName = equipment.name.toUpperCase();
             if (Object.keys(equipmentIds).map(key => key.toUpperCase()).includes(equipmentName)) {
               images[equipment.name] = equipment.image;
-              console.log(`El equipo ${equipment.name} tiene la imagen ${equipment.image}`);
+              // console.log(`El equipo ${equipment.name} tiene la imagen ${equipment.image}`);
             }
           });
           setEquipmentImages(images);
           setError(null);
-
-          // Imprimir mensajes de asignación de imágenes
           Object.keys(images).forEach(equipment => {
-            console.log(`A ${equipment} se le ha asignado una imagen.`);
+            // console.log(`A ${equipment} se le ha asignado una imagen.`);
           });
-
-          // Imprimir el objeto equipmentImages completo
-          console.log('equipmentImages:', images);
+          // console.log('equipmentImages:', images);
         } else {
           throw new Error('Error');
         }
@@ -628,7 +616,6 @@ export const UI = ({ hidden, ...props }) => {
     };
   }, [posterImages.length]);
 
-
   const sendMessage = () => {
     const text = input.current.value;
     if (!loading && !message) {
@@ -660,7 +647,8 @@ export const UI = ({ hidden, ...props }) => {
                 </div>
               )}
               {!isButtonVisible && (
-                <div className={`${isVisible ? "flex" : "hidden"} items-center justify-center w-full h-full`}>
+                // <div className={`${isVisible ? "flex" : "hidden"} items-center justify-center w-full h-full`}>
+                <div className={`flex items-center justify-center w-full h-full`}>
                   <input
                     className={` w-7/12 h-2/6 placeholder:text-gray-800 placeholder:italic p-4 rounded-l-md bg-opacity-50 bg-white backdrop-blur-md`}
                     placeholder="Escribe..."
@@ -1176,8 +1164,8 @@ export const UI = ({ hidden, ...props }) => {
                 <div className="flex flex-col items-start justify-center h-full w-full">
                 {data.map((item, index) => (
                     <div key={index} style={{ marginLeft: `${30 - index * 2}%` }} className="animate flex items-center justify-center w-6/12 h-1/6 text-center text-white">
-                      <div className="flex h-5/6 w-6/12 items-center justify-center whitespace-nowrap font-bold text-2xl">{item.nombre}</div>
-                      <div className="flex border-l border-white h-3/6 w-6/12 items-center justify-center whitespace-nowrap text-2xl">{item.horario}</div>
+                      <div style={{ fontSize: '0.7vw' }} className="flex h-5/6 w-6/12 items-center justify-center whitespace-nowrap font-bold text-2xl">{item.nombre}</div>
+                      <div style={{ fontSize: '0.6vw' }} className="flex border-l border-white h-3/6 w-6/12 items-center justify-center whitespace-nowrap text-2xl">{item.horario}</div>
                     </div>
                   ))}
                 </div>
