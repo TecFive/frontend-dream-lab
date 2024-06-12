@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { TransitionGroup, CSSTransition } from 'react-transition-group';
 import './ReservationBanner.css';
 import axiosInstance from '../hooks/axiosInstance';
+import { startOfDay, endOfDay, format, subMinutes } from 'date-fns';
 
 const ReservationBanner = () => {
   const [DBreservations, setDBReservations] = useState([]);
@@ -9,17 +10,27 @@ const ReservationBanner = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    axiosInstance.get("/reservations/")
+    const now = new Date();
+    const startDate = format(subMinutes(now, 15), 'yyyy-MM-dd HH:mm');
+    const endDate = format(endOfDay(now), 'yyyy-MM-dd HH:mm');
+    //const startDate = startOfDay(now).toISOString();
+    //const endDate = endOfDay(now).toISOString();
+    console.log(startDate.toString())
+    axiosInstance.get(`/admin/reservations/selector/${startDate}/${endDate}`, {
+      params: {
+        start_date: startDate, end_date: endDate
+      }
+    })
       .then(response => {
         // console.log('API response:', response.data);
-        if (Array.isArray(response.data.data)) {
-          const reservations = response.data.data.map(reservation => ({
+        if (Array.isArray(response.data)) {
+          const reservations = response.data.map(reservation => ({
             name: reservation.user.name,
             room: reservation.room.name,
             time: `${new Date(reservation.start_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${new Date(reservation.end_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
           }));
           // console.log('Formatted reservations:', reservations);
-          setDBReservations(reservations); 
+          setDBReservations(reservations);
           setError(null);
         } else {
           throw new Error('La respuesta no es un array.');
