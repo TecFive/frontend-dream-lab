@@ -273,7 +273,7 @@ export const UI = ({ hidden, ...props }) => {
   }, [transcript]);
 
   useEffect(() => {
-    const dateRegex = /(\d{1,2}) de ([a-zA-Z]+) del (\d{4})/;
+    const dateRegex = /(\d{1,2})\s+.*\s+([a-zA-Z]+)\s+.*\s+(\d{4})/;
     const match = transcript.match(dateRegex);
     if (match) {
       const day = parseInt(match[1]);
@@ -720,13 +720,13 @@ export const UI = ({ hidden, ...props }) => {
                 )}
               </div>
               <div className="flex items-start justify-center w-full h-2/6">
-                <div className="flex w-1/12 h-3/6">
+                <div className="flex w-2/12 h-5/6">
                   <button
                     onClick={() => {
                       setIsClicked(true);
                       startListeningHandler();
                     }}
-                    className={`flex w-full h-full bg-blue-500 text-white items-center justify-center rounded-full shadow-lg hover:bg-blue-700 transition-colors duration-300 ${isClicked ? 'animate-pulse' : ''}`}
+                    className={`border border-white flex w-full h-full bg-blue-500 text-white items-center justify-center rounded-full shadow-lg hover:bg-blue-700 transition-colors duration-300 ${isClicked ? 'animate-pulse' : ''}`}
                   >
                     <div className="w-5/12 h-2/6">
                       {isClicked ? <FaMicrophone className="w-full h-full" /> : <FaMicrophone className="w-full h-full" />}
@@ -760,12 +760,12 @@ export const UI = ({ hidden, ...props }) => {
                   }}
                 />
               </div>
-              <div className="flex flex-col items-center justify-center text-xl pointer-events-auto w-4/6 h-2/6 mx-auto bg-opacity-50 bg-white backdrop-blur-md rounded-b">
-                <div className="mb-8">
-                  <label>Login para </label>
+              <div className="border border-black flex flex-col items-center justify-center text-xl pointer-events-auto w-4/6 h-2/6 mx-auto bg-opacity-50 bg-white backdrop-blur-md rounded-b">
+                <div className="flex items-center justify-between mb-8">
+                  <label className="mr-2">Login para</label>
                   <select
                     onChange={handleDropdownChange}
-                    className="border border-black first-line:text-black bg-transparent p-1 rounded-md"
+                    className="border border-black first-line:text-black bg-transparent p-1 rounded-md flex-grow"
                   >
                     <option value="ALUMNO">Alumnos</option>
                     <option value="DOCENTE">Docentes</option>
@@ -777,7 +777,7 @@ export const UI = ({ hidden, ...props }) => {
                     className="flex items-center justify-between"
                   >
                     <input
-                      className="placeholder:text-gray-800 placeholder:italic p-4"
+                      className="placeholder:text-gray-800 placeholder:italic p-4 flex w-full"
                       value={inputValue}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
@@ -799,7 +799,7 @@ export const UI = ({ hidden, ...props }) => {
                         }
                       }}
                     />
-                    <button ref={buttonRef} className="bg-blue-500 hover:bg-blue-600 text-white w-14 h-full flex items-center justify-center">
+                    <button ref={buttonRef} className="bg-blue-500 hover:bg-blue-600 text-white w-3/12 h-full flex items-center justify-center">
                       <FaCheck />
                     </button>
                   </form>
@@ -814,30 +814,30 @@ export const UI = ({ hidden, ...props }) => {
               <div className="w-3/12 h-5/6 flex flex-col justify-center items-center bg-[#10069f] relative rounded-l-md">
                 {selectedDate && (
                   <div className="h-full w-full flex flex-col items-center text-white ">
-                    <div className="h-3/5 w-11/12 flex flex-col items-center justify-center">
-                      <span className="text-4xl uppercase">
-                        {selectedDate.toLocaleString("es", { weekday: "long" })}
-                      </span>
-                      <span className="text-9xl">{selectedDate.getDate()}</span>
-                      <span className="text-2xl uppercase">
-                        {selectedDate.toLocaleString("es", { month: "long" })}
-                      </span>
-                    </div>
+                      <div className="h-3/5 w-11/12 flex flex-col items-center justify-center overflow-hidden">
+                        <span className="text-[3vw] uppercase overflow-hidden">
+                          {selectedDate.toLocaleString("es", { weekday: "long" })}
+                        </span>
+                        <span className="text-[8vw] overflow-hidden">{selectedDate.getDate()}</span>
+                        <span className="text-[3vw] uppercase overflow-hidden">
+                          {selectedDate.toLocaleString("es", { month: "long" })}
+                        </span>
+                      </div>
                     <div className="h-2/6 w-10/12">
-                      <span className="flex h-1/5 items-center text-base underline uppercase font-bold">
+                      <span className="flex h-1/5 items-center text-base underline uppercase font-bold text-[1vw] overflow-hidden">
                         Especificaciones :
                       </span>
                       <div className="flex flex-col justify-start h-3/5">
                         <ul className="list-disc list-inside">
-                          <li>{cardNames[selectedCard] ? cardNames[selectedCard] : "Sin sala"}</li>
-                          <li>
+                          <li className="text-[1.1vw] overflow-hidden">{cardNames[selectedCard] ? cardNames[selectedCard] : "Sin sala"}</li>
+                          <li className="text-[1.1vw] overflow-hidden">
                             {selectedTimes.length === 2 ?
                               `${convertTo12Hour(selectedTimes[0])} - ${convertTo12Hour(selectedTimes[1])}`
                               : 'Sin Horario'}
                           </li>
                           {Object.values(counts).some(count => count > 0) && (
                             <>
-                              <li className="list-disc">Equipo seleccionado:</li>
+                              <li className="list-disc text-[1vw] overflow-hidden">Equipo seleccionado:</li>
                               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
                                 {Object.entries(counts).map(([team, count]) =>
                                   count > 0 ? (
@@ -852,22 +852,22 @@ export const UI = ({ hidden, ...props }) => {
                         </ul>
                       </div>
                     </div>
-                    <button
-                      className="bg-blue-500 hover:bg-blue-600 text-white w-11/12 flex items-center justify-center text-2xl uppercase rounded-md"
-                      onClick={handleCreateReservation}
-                    >
-                      reservar
-                    </button>
+                      <button
+                        className="bg-blue-500 hover:bg-blue-600 text-white w-11/12 flex items-center justify-center text-[1.5vw] uppercase rounded-md overflow-hidden"
+                        onClick={handleCreateReservation}
+                      >
+                        reservar
+                      </button>
                   </div>
                 )}
               </div>
               <div className="border border-blue-800 flex flex-col items-center justify-center w-8/12 h-5/6 bg-opacity-50 bg-white backdrop-blur-md rounded-r-md">
-                {reservationCreated ? (
-                  <div className="w-full h-full flex flex-col justify-center items-center">
-                    <FaCheckCircle className="checkmark-animation" size={50} color="blue" />
-                    <h1 className="text-animation">RESERVACIÓN CREADA CON ÉXITO</h1>
-                  </div>
-                ) : (
+                  {reservationCreated ? (
+                    <div className="w-full h-full flex flex-col justify-center items-center">
+                      <FaCheckCircle className="checkmark-animation" size={100} color="blue" />
+                      <h1 className="text-[2vw] overflow-hidden text-animation">RESERVACIÓN CREADA CON ÉXITO</h1>
+                    </div>
+                  ) : (
                   <>
                     <div className="w-full h-full flex justify-center items-center">
                       {(() => {
@@ -1064,22 +1064,22 @@ export const UI = ({ hidden, ...props }) => {
                         }
                       })()}
                     </div>
-                    <div className="w-full h-1/6 flex items-center justify-center space-x-4">
-                      {questions.map((question, index) => (
-                        <React.Fragment key={index}>
-                          {index !== 0 && <span className="text-gray-500">•</span>}
-                          <button
-                            onMouseEnter={() => handleMouseEnter(index)}
-                            onMouseLeave={handleMouseLeave}
-                            onClick={() => handleQuestionClick(index)}
-                            className={`relative text-xl h-4/6 w-auto flex items-center justify-center ${currentQuestionIndex === index ? "text-blue-500" : "text-gray-500"} ${hoverIndex === index ? "hovered" : ""}`}
-                          >
-                            {question}
-                            {currentQuestionIndex === index && <span className="absolute top-0 left-1/2 transform -translate-x-1/2 -mt-2 active-arrow">▼</span>}
-                          </button>
-                        </React.Fragment>
-                      ))}
-                    </div>
+                        <div className="w-full h-1/6 flex items-center justify-center space-x-4 border border-black">
+                          {questions.map((question, index) => (
+                            <React.Fragment key={index}>
+                              {index !== 0 && <span className="text-gray-500">•</span>}
+                              <button
+                                onMouseEnter={() => handleMouseEnter(index)}
+                                onMouseLeave={handleMouseLeave}
+                                onClick={() => handleQuestionClick(index)}
+                                className={`relative text-[1.1vw] h-4/6 w-auto flex items-center justify-center ${currentQuestionIndex === index ? "text-blue-500" : "text-gray-500"} ${hoverIndex === index ? "hovered" : ""}`}
+                              >
+                                {question}
+                                {currentQuestionIndex === index && <span className="absolute top-0 left-1/2 transform -translate-x-1/2 -mt-2 active-arrow">▼</span>}
+                              </button>
+                            </React.Fragment>
+                          ))}
+                        </div>
                   </>
                 )}
               </div>

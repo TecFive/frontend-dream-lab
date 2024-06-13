@@ -80,9 +80,10 @@ body {
 .text-animation {
   animation: pulse 2s infinite;
   color: blue;
-  font-size: 2em;
+  font-size: 2vw;
   text-shadow: 0 0 5px #ffffff;
   white-space: nowrap;
+  overflow: hidden;
 }
 
 .checkmark-animation {
