@@ -189,9 +189,10 @@ export const UI = ({ hidden, ...props }) => {
     return isNaN(number) ? numbers[text.toLowerCase()] || 0 : number;
   };
 
+  const messageSentRef = useRef(false);
+
   useEffect(() => {
-    if (!selectedLab) {
-      // console.error("No hay una sala seleccionada");
+    if (!selectedLab || messageSentRef.current) {
       return;
     }
 
@@ -233,7 +234,22 @@ export const UI = ({ hidden, ...props }) => {
     if (inputValues.length > 0 && inputContainsEquipment) {
       sendMessage();
     }
+    if (inputValues.length > 0 && inputContainsEquipment) {
+      messageSentRef.current = true;
+      setTimeout(() => {
+        if (input.current.value.trim() !== '') {
+          sendMessage();
+        }
+      }, 2000);
+      //setTimeout(() => {
+        //handleCreateReservation();
+      //}, 12000);
+    }
   }, [transcript, selectedLab]);
+
+  useEffect(() => {
+    messageSentRef.current = false;
+  }, [selectedLab]);
 
   useEffect(() => {
     if (reservationCreated && !executed) {
@@ -813,7 +829,7 @@ export const UI = ({ hidden, ...props }) => {
             <div className="flex flex-row items-center justify-center w-3/5 h-full">
               <div className="w-3/12 h-5/6 flex flex-col justify-center items-center bg-[#10069f] relative rounded-l-md">
                 {selectedDate && (
-                  <div className="h-full w-full flex flex-col items-center text-white ">
+                  <div className="h-full w-full flex flex-col items-center text-white">
                       <div className="h-3/5 w-11/12 flex flex-col items-center justify-center overflow-hidden">
                         <span className="text-[2vw] uppercase overflow-hidden">
                           {selectedDate.toLocaleString("es", { weekday: "long" })}
