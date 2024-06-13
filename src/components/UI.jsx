@@ -1,5 +1,5 @@
 import { useReserva } from "../hooks/useLAB";
-import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import { FaCheck, FaChalkboardTeacher } from "react-icons/fa";
 import { TbLego } from "react-icons/tb";
 import { GiLaptop } from "react-icons/gi";
@@ -71,6 +71,10 @@ export const UI = ({ hidden, ...props }) => {
   const [selectedRoomId, setSelectedRoomId] = useState(null);
   const [roomImages, setRoomImages] = useState({});
   const [equipmentImages, setEquipmentImages] = useState({});
+  const [previousLab, setPreviousLab] = useState(null);
+  const [executed, setExecuted] = useState(false);
+  const [messageSent, setMessageSent] = useState(false);
+  const [codeExecuted, setCodeExecuted] = useState(false);
   const [counts, setCounts] = useState({
     'LEGO': 0,
     'VR Headset': 0,
@@ -137,9 +141,10 @@ export const UI = ({ hidden, ...props }) => {
       return;
     }
 
-    const equipmentRegex = /(\d+|[a-záéíóúñ]+) ([a-záéíóúñ]+)/i;
-    const match = transcript.toLowerCase().match(equipmentRegex);
-    if (match) {
+    const equipmentRegex = /(\d+|un|una|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez).*?([a-záéíóúñ]+)/gi;
+    let match;
+    let inputValues = [];
+    while ((match = equipmentRegex.exec(transcript.toLowerCase())) !== null) {
       const quantity = textToNumber(match[1]);
       let equipment = match[2];
       if (['pizarrón', 'pizarrones'].includes(equipment)) {
@@ -159,12 +164,20 @@ export const UI = ({ hidden, ...props }) => {
             ...prevCounts,
             [equipment]: quantity
           }));
+          inputValues.push(`${quantity} ${equipment}`);
         } else {
           // console.error(`El equipo ${equipment} no está disponible en la sala seleccionada`);
         }
       } else {
         // console.error(`El equipo ${equipment} no está disponible`);
       }
+    }
+    input.current.value = inputValues.join(' - ');
+    console.log(`Equipos seleccionados: ${inputValues.join(' - ')}`);
+    const equipmentList = ['Whiteboard', 'Projector', 'LEGO', 'VR Headset', 'PC'];
+    const inputContainsEquipment = equipmentList.some(equipment => input.current.value.includes(equipment));
+    if (inputValues.length > 0 && inputContainsEquipment) {
+      sendMessage();
     }
   }, [transcript, selectedLab]);
 
@@ -210,27 +223,88 @@ export const UI = ({ hidden, ...props }) => {
     return `${hour.toString().padStart(2, '0')}:${minutes}`;
   };
 
+  const [isTimeSelected, setIsTimeSelected] = useState(false);
+
+  const convertTo24hr = (time) => {
+    if (typeof time !== 'string') {
+      if (typeof time.toString === 'function') {
+        time = time.toString();
+      } else {
+        console.error(`Invalid time format. Expected a string but received ${typeof time}.`);
+        return "";
+      }
+    }
+    if (/^\d{2}:\d{2}$/.test(time)) {
+      return time;
+    }
+    const [time12h, modifier] = time.split(' ');
+    if (!time12h || !modifier) {
+      console.error(`Invalid time format. Expected format 'HH:MM AM/PM' but received '${time}'.`);
+      return "";
+    }
+    let [hours, minutes] = time12h.split(':');
+    if (hours === '12') {
+      hours = '00';
+    }
+    if (modifier.toLowerCase() === 'pm') {
+      hours = parseInt(hours, 10) + 12;
+    }
+    return `${hours}:${minutes}`;
+  };
+
   useEffect(() => {
-    const timeRegex = /de las (\d{1,2}(?::\d{2})?\s*(a\.?\s*m\.?|p\.?\s*m\.?)) a las (\d{1,2}(?::\d{2})?\s*(a\.?\s*m\.?|p\.?\s*m\.?))/i;
+    if (!codeExecuted && isTimeSelected) {
+      const displayedStartTime = startTime ? convertTo24hr(startTime) : "";
+      const displayedEndTime = endTime ? convertTo24hr(endTime) : "";
+      const listItemTime = `${displayedStartTime} - ${displayedEndTime}`;
+      const inputTime = convertTo24hr(input.current.value.split(' - ')[0]) + ' - ' + convertTo24hr(input.current.value.split(' - ')[1]);
+      if (listItemTime !== inputTime) {
+        console.error(`El horario seleccionado (${listItemTime}) no coincide con el horario mostrado (${inputTime}).`);
+        setIsTimeSelected(false);
+      }
+      setCodeExecuted(true);
+      return;
+    }
+
+    const timeRegex = /(\d{1,2}(?::\d{2})?\s*(a\.?\s*m\.?|p\.?\s*m\.?)).*?(\d{1,2}(?::\d{2})?\s*(a\.?\s*m\.?|p\.?\s*m\.?))/i;
     const match = transcript.match(timeRegex);
-    if (match) {
+    if (match && !messageSent) {
       let startTime = convertTo24HourFormat(match[1]);
       let endTime = convertTo24HourFormat(match[3]);
       if (times.includes(startTime) && times.includes(endTime)) {
         setStartTime(startTime);
         setEndTime(endTime);
         selectTime({ start: startTime, end: endTime });
+        console.log(`Horario seleccionado: ${startTime} - ${endTime}`);
+        input.current.value = `${startTime} - ${endTime}`;
+        setIsTimeSelected(true);
         setTimeout(() => {
-          handleQuestionClick(currentQuestionIndex + 1);
+          if (!messageSent && input.current.value.trim() !== '') {
+            sendMessage();
+            setMessageSent(true);
+            setTimeout(() => {
+              handleQuestionClick(currentQuestionIndex + 1);
+            }, 2000);
+          }
         }, 2000);
       } else {
         let unavailableTimes = [];
         if (!times.includes(startTime)) unavailableTimes.push(startTime);
         if (!times.includes(endTime)) unavailableTimes.push(endTime);
-        // console.error(`Los horarios ${unavailableTimes.join(' y ')} no están disponibles`);
+        console.error(`Los horarios ${unavailableTimes.join(' y ')} no están disponibles`);
       }
     }
-  }, [transcript]);
+  }, [transcript, isTimeSelected, messageSent]);
+
+  useEffect(() => {
+    if (reservationCreated && !executed) {
+      input.current.value = "reservacion creada";
+      setTimeout(() => {
+        sendMessage();
+        setExecuted(true);
+      }, 5000);
+    }
+  }, [reservationCreated]);
 
   const mandarMatricula = (e) => {
     e.preventDefault();
@@ -274,6 +348,8 @@ export const UI = ({ hidden, ...props }) => {
         today.setHours(0, 0, 0, 0);
         if (date >= today) {
           setSelectedDate(date);
+          input.current.value = date.toLocaleDateString('es-ES');
+          sendMessage();
           setTimeout(() => {
             handleQuestionClick(currentQuestionIndex + 1);
           }, 2000);
@@ -284,11 +360,13 @@ export const UI = ({ hidden, ...props }) => {
 
   useEffect(() => {
     const cardNamesRegex = new RegExp(cardNames.join("|"), "i");
+    const labNumberRegex = /laboratorio (\d+|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)/i;
     const match = transcript.match(cardNamesRegex);
+    const labNumberMatch = transcript.match(labNumberRegex);
     if (match) {
       const selectedCardName = match[0];
       const index = cardNames.findIndex(cardName => cardName.toLowerCase() === selectedCardName.toLowerCase());
-      if (index !== -1) {
+      if (index !== -1 && cardNames[index] !== previousLab) {
         setSelectedCard(index);
         setSelectedRoomId(roomIds[cardNames[index]]);
         setSelectedLab(cardNames[index]);
@@ -299,9 +377,51 @@ export const UI = ({ hidden, ...props }) => {
           'Projector': 0,
           'Whiteboard': 0
         });
+        input.current.value = "Laboratorio " + cardNames[index];
+        sendMessage();
+        setPreviousLab(cardNames[index]);
+      }
+    } else if (labNumberMatch) {
+      const labNumber = labNumberMatch[1];
+      const numberMap = {
+        'uno': 1,
+        'dos': 2,
+        'tres': 3,
+        'cuatro': 4,
+        'cinco': 5,
+        'seis': 6,
+        'siete': 7,
+        'ocho': 8,
+        'nueve': 9,
+        'diez': 10
+      };
+      const index = isNaN(labNumber) ? numberMap[labNumber] - 1 : parseInt(labNumber) - 1;
+      if (index >= 0 && index < cardNames.length && cardNames[index] !== previousLab) {
+        setSelectedCard(index);
+        setSelectedRoomId(roomIds[cardNames[index]]);
+        setSelectedLab(cardNames[index]);
+        setCounts({
+          'LEGO': 0,
+          'VR Headset': 0,
+          'PC': 0,
+          'Projector': 0,
+          'Whiteboard': 0
+        });
+        input.current.value = "Laboratorio " + cardNames[index];
+        sendMessage();
+        setPreviousLab(cardNames[index]);
       }
     }
   }, [transcript, cardNames]);
+
+  const originalConsoleLog = console.log;
+  console.log = function (message) {
+    originalConsoleLog.apply(console, arguments);
+
+    if (message === "Avatar has stopped talking") {
+      startListeningHandler();
+    }
+  };
 
   const startListeningHandler = () => {
     if (!listening) {
@@ -433,7 +553,7 @@ export const UI = ({ hidden, ...props }) => {
       "VR Headset": "6614aaed6d294f5d4400869d",
       "PC": "6614aaed6d294f5d4400869e",
       "Projector": "6614aaed6d294f5d4400869f",
-      "Whiteboard": "6614aaed6d294f5d4400869g",
+      "Whiteboard": "6614aaed6d294f5d440086a0",
     };
 
     axiosInstance.get('/equipment/')
@@ -475,7 +595,7 @@ export const UI = ({ hidden, ...props }) => {
     "VR Headset": "6614aaed6d294f5d4400869d",
     "PC": "6614aaed6d294f5d4400869e",
     "Projector": "6614aaed6d294f5d4400869f",
-    "Whiteboard": "6614aaed6d294f5d4400869g",
+    "Whiteboard": "6614aaed6d294f5d440086a0",
   };
 
   const handleCreateReservation = async () => {
@@ -509,12 +629,12 @@ export const UI = ({ hidden, ...props }) => {
 
     try {
       await axiosInstance.post('/reservations/', payload);
-      alert("¡Reservacion creada con exito!");
+      // alert("¡Reservacion creada con exito!");
       setReservationCreated(true);
       setIsVisible(true);
     } catch (error) {
-      // console.error(error.response || error);
-      alert(error);
+      console.error(error.response || error);
+      // alert(error);
     }
   };
 
@@ -535,7 +655,7 @@ export const UI = ({ hidden, ...props }) => {
   useEffect(() => {
     if (!isButtonVisible) {
       input.current.value = "iniciar reservacion";
-      sendMessage();
+      //sendMessage();
     }
   }, [isButtonVisible]);
 
@@ -563,8 +683,6 @@ export const UI = ({ hidden, ...props }) => {
       const endTime = addThirtyMinutes(time);
       setEndTime(endTime);
       const formattedTime = `${startTime} - ${endTime}`;
-      input.current.value = formattedTime;
-      sendMessage();
       handleQuestionClick(currentQuestionIndex + 1);
     }
   };
@@ -685,7 +803,7 @@ export const UI = ({ hidden, ...props }) => {
                     className={`flex w-full h-full bg-blue-500 text-white items-center justify-center rounded-full shadow-lg hover:bg-blue-700 transition-colors duration-300 ${isClicked ? 'animate-pulse' : ''}`}
                   >
                     <div className="w-5/12 h-2/6">
-                      {isClicked ? <FaMicrophone className="w-full h-full" /> : <FaMicrophoneSlash className="w-full h-full" />}
+                      {isClicked ? <FaMicrophone className="w-full h-full" /> : <FaMicrophone className="w-full h-full" />}
                     </div>
                   </button>
                 </div>
@@ -891,7 +1009,10 @@ export const UI = ({ hidden, ...props }) => {
                                       });
                                     }}
                                   >
-                                    <div className="absolute bottom-0 w-full flex items-center justify-center bg-blue-600 text-white rounded-b">{name}</div>
+                                    <div className="absolute bottom-0 w-full flex flex-col items-center justify-center bg-blue-600 text-white rounded-b">
+                                      <div className="text-white">Laboratorio {index + 1}:</div>
+                                      <div>{name}</div>
+                                    </div>
                                     {!roomImages[name] && <div className="absolute inset-0 flex items-center justify-center text-lg text-gray-500">Imagen no disponible</div>}
                                   </div>
                                 ))}
@@ -920,6 +1041,9 @@ export const UI = ({ hidden, ...props }) => {
                                           setEndTime(null);
                                         } else if (!endTime || time === endTime) {
                                           setEndTime(time);
+                                          console.log(`${startTime} - ${time}`);
+                                          input.current.value = `${startTime} - ${time}`;
+                                          sendMessage();
                                           if (time !== startTime) {
                                             setTimeout(() => {
                                               handleQuestionClick(currentQuestionIndex + 1);
@@ -928,7 +1052,7 @@ export const UI = ({ hidden, ...props }) => {
                                         }
                                         selectTime(time);
                                       }}
-                                      disabled={startTime && !endTime && time < startTime}
+                                      
                                     >
                                       {time12hr}
                                     </button>
@@ -1162,7 +1286,7 @@ export const UI = ({ hidden, ...props }) => {
                 justifyContent: 'center'
               }}>
                 <div className="flex flex-col items-start justify-center h-full w-full">
-                {data.map((item, index) => (
+                  {data.map((item, index) => (
                     <div key={index} style={{ marginLeft: `${30 - index * 2}%` }} className="animate flex items-center justify-center w-6/12 h-1/6 text-center text-white">
                       <div style={{ fontSize: '0.7vw' }} className="flex h-5/6 w-6/12 items-center justify-center whitespace-nowrap font-bold text-2xl">{item.nombre}</div>
                       <div style={{ fontSize: '0.6vw' }} className="flex border-l border-white h-3/6 w-6/12 items-center justify-center whitespace-nowrap text-2xl">{item.horario}</div>
