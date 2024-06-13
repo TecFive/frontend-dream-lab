@@ -760,7 +760,7 @@ export const UI = ({ hidden, ...props }) => {
                   }}
                 />
               </div>
-              <div className="border border-black flex flex-col items-center justify-center text-xl pointer-events-auto w-4/6 h-2/6 mx-auto bg-opacity-50 bg-white backdrop-blur-md rounded-b">
+              <div className="flex flex-col items-center justify-center text-xl pointer-events-auto w-4/6 h-2/6 mx-auto bg-opacity-50 bg-white backdrop-blur-md rounded-b">
                 <div className="flex items-center justify-between mb-8">
                   <label className="mr-2">Login para</label>
                   <select
@@ -777,7 +777,7 @@ export const UI = ({ hidden, ...props }) => {
                     className="flex items-center justify-between"
                   >
                     <input
-                      className="placeholder:text-gray-800 placeholder:italic p-4 flex w-full"
+                      className="placeholder:text-gray-800 placeholder:italic p-4 flex w-full rounded-l-md border-t border-l border-b border-black"
                       value={inputValue}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
@@ -799,7 +799,7 @@ export const UI = ({ hidden, ...props }) => {
                         }
                       }}
                     />
-                    <button ref={buttonRef} className="bg-blue-500 hover:bg-blue-600 text-white w-3/12 h-full flex items-center justify-center">
+                    <button ref={buttonRef} className="bg-blue-500 hover:bg-blue-600 text-white w-3/12 h-full flex items-center justify-center rounded-r-md border-t border-r border-b border-black">
                       <FaCheck />
                     </button>
                   </form>
@@ -815,11 +815,11 @@ export const UI = ({ hidden, ...props }) => {
                 {selectedDate && (
                   <div className="h-full w-full flex flex-col items-center text-white ">
                       <div className="h-3/5 w-11/12 flex flex-col items-center justify-center overflow-hidden">
-                        <span className="text-[3vw] uppercase overflow-hidden">
+                        <span className="text-[2vw] uppercase overflow-hidden">
                           {selectedDate.toLocaleString("es", { weekday: "long" })}
                         </span>
                         <span className="text-[8vw] overflow-hidden">{selectedDate.getDate()}</span>
-                        <span className="text-[3vw] uppercase overflow-hidden">
+                        <span className="text-[2vw] uppercase overflow-hidden">
                           {selectedDate.toLocaleString("es", { month: "long" })}
                         </span>
                       </div>
@@ -1064,7 +1064,7 @@ export const UI = ({ hidden, ...props }) => {
                         }
                       })()}
                     </div>
-                        <div className="w-full h-1/6 flex items-center justify-center space-x-4 border border-black">
+                        <div className="w-full h-1/6 flex items-center justify-center space-x-4">
                           {questions.map((question, index) => (
                             <React.Fragment key={index}>
                               {index !== 0 && <span className="text-gray-500">•</span>}
