@@ -11,7 +11,7 @@ import ReservationBanner from './ReservationBanner';
 import axiosInstance from "../hooks/axiosInstance";
 import { FaCheckCircle } from 'react-icons/fa';
 import '../index.css';
-import { FaMicrophone, FaMicrophoneSlash } from "react-icons/fa6";
+import { FaMicrophone } from "react-icons/fa6";
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import { endOfISOWeek, format, subMinutes } from 'date-fns';
 
@@ -63,8 +63,6 @@ export const UI = ({ hidden, ...props }) => {
   const [isClicked, setIsClicked] = useState(false);
   const buttonRef = useRef(null);
   const { transcript, listening, resetTranscript, browserSupportsSpeechRecognition } = useSpeechRecognition();
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
   const [selected, setSelected] = useState({});
   const [selectedLab, setSelectedLab] = useState(null);
   const [availableEquipments, setAvailableEquipments] = useState([]);
@@ -72,9 +70,7 @@ export const UI = ({ hidden, ...props }) => {
   const [roomImages, setRoomImages] = useState({});
   const [equipmentImages, setEquipmentImages] = useState({});
   const [previousLab, setPreviousLab] = useState(null);
-  const [executed, setExecuted] = useState(false);
-  const [messageSent, setMessageSent] = useState(false);
-  const [codeExecuted, setCodeExecuted] = useState(false);
+  const [executed, setExecuted] = useState(false);;
   const [counts, setCounts] = useState({
     'LEGO': 0,
     'VR Headset': 0,
@@ -82,6 +78,64 @@ export const UI = ({ hidden, ...props }) => {
     'Projector': 0,
     'Whiteboard': 0
   });
+
+  const [selectedButtons, setSelectedButtons] = useState([]);
+  const [selectedTimes, setSelectedTimes] = useState([]);
+
+  const selectbotones = (num) => {
+    if (selectedButtons.length === 0 || selectedButtons.length === 2 || num > selectedButtons[0]) {
+      if (selectedButtons.length < 2) {
+        setSelectedButtons([...selectedButtons, num]);
+      } else {
+        setSelectedButtons([num]);
+      }
+    }
+  };
+
+  const timeToMinutes = (time24) => {
+    const [hour, minute] = time24.split(':').map(Number);
+    return hour * 60 + minute;
+  };
+
+  const convertTo12Hour = (time24) => {
+    const [hour, minute] = time24.split(':').map(Number);
+    const period = hour < 12 || hour === 24 ? 'AM' : 'PM';
+    return `${(hour % 12) || 12}:${minute.toString().padStart(2, '0')} ${period}`;
+  };
+
+  useEffect(() => {
+    const timePattern = /(\d{1,2}):?(\d{2})?\s*(a\.?\s*m\.?|p\.?\s*m\.?).*?(\d{1,2}):?(\d{2})?\s*(a\.?\s*m\.?|p\.?\s*m\.?)/i;
+    const match = transcript.match(timePattern);
+
+    if (match) {
+      const startHour = match[1];
+      const startMinute = match[2] || '00';
+      const startPeriod = match[3];
+      const endHour = match[4];
+      const endMinute = match[5] || '00';
+      const endPeriod = match[6];
+
+      const convertTo24Hour = (hour, minute, period) => {
+        hour = parseInt(hour, 10);
+        if (period.toLowerCase() === 'pm' && hour !== 12) {
+          hour += 12;
+        } else if (period.toLowerCase() === 'am' && hour === 12) {
+          hour = 0;
+        }
+        return `${hour.toString().padStart(2, '0')}:${minute}`;
+      };
+
+      const startHour24 = convertTo24Hour(startHour, startMinute, startPeriod);
+      const endHour24 = convertTo24Hour(endHour, endMinute, endPeriod);
+
+      input.current.value = `${startHour24} - ${endHour24}`;
+      sendMessage();
+      setTimeout(() => {
+        handleQuestionClick(currentQuestionIndex + 1);
+      }, 11000);
+      setSelectedTimes([startHour24, endHour24]);
+    }
+  }, [transcript]);
 
   const labToEquipments = {
     "Lego Room": ["LEGO", "PC"],
@@ -173,7 +227,7 @@ export const UI = ({ hidden, ...props }) => {
       }
     }
     input.current.value = inputValues.join(' - ');
-    console.log(`Equipos seleccionados: ${inputValues.join(' - ')}`);
+    //console.log(`Equipos seleccionados: ${inputValues.join(' - ')}`);
     const equipmentList = ['Whiteboard', 'Projector', 'LEGO', 'VR Headset', 'PC'];
     const inputContainsEquipment = equipmentList.some(equipment => input.current.value.includes(equipment));
     if (inputValues.length > 0 && inputContainsEquipment) {
@@ -181,128 +235,13 @@ export const UI = ({ hidden, ...props }) => {
     }
   }, [transcript, selectedLab]);
 
-  const times = [];
-  for (let i = 0; i < 24; i++) {
-    for (let j = 0; j < 60; j += 30) {
-      const hour = i < 10 ? `0${i}` : i;
-      const minute = j === 0 ? "00" : j;
-      times.push(`${hour}:${minute}`);
-    }
-  }
-
-  const convertTo12hr = (time) => {
-    if (typeof time === 'object') {
-      time = JSON.stringify(time);
-    }
-    if (typeof time !== 'string') {
-      // console.error(`Invalid time format. Expected a string but received ${typeof time}.`);
-      return "";
-    }
-    if (!time) return "";
-    let [hours, minutes] = time.split(':');
-    let period = +hours < 12 ? 'AM' : 'PM';
-    hours = +hours % 12 || 12;
-    return `${hours}:${minutes} ${period}`;
-  }
-
-  const convertTo24HourFormat = (time) => {
-    if (Array.isArray(time)) {
-      time = time[0];
-    }
-    if (typeof time === 'object') {
-      time = JSON.stringify(time);
-    }
-    if (!time) return null;
-    let match = time.match(/(\d{1,2})(?::(\d{2}))?\s*(a\.?\s*m\.?|p\.?\s*m\.?)/i);
-    if (!match) return null;
-    let [_, hour, minutes, period] = match;
-    hour = parseInt(hour);
-    minutes = minutes ? minutes : '00';
-    if (period.toLowerCase().replace(/\./g, '') === 'pm' && hour !== 12) hour += 12;
-    if (period.toLowerCase().replace(/\./g, '') === 'am' && hour === 12) hour = 0;
-    return `${hour.toString().padStart(2, '0')}:${minutes}`;
-  };
-
-  const [isTimeSelected, setIsTimeSelected] = useState(false);
-
-  const convertTo24hr = (time) => {
-    if (typeof time !== 'string') {
-      if (typeof time.toString === 'function') {
-        time = time.toString();
-      } else {
-        console.error(`Invalid time format. Expected a string but received ${typeof time}.`);
-        return "";
-      }
-    }
-    if (/^\d{2}:\d{2}$/.test(time)) {
-      return time;
-    }
-    const [time12h, modifier] = time.split(' ');
-    if (!time12h || !modifier) {
-      console.error(`Invalid time format. Expected format 'HH:MM AM/PM' but received '${time}'.`);
-      return "";
-    }
-    let [hours, minutes] = time12h.split(':');
-    if (hours === '12') {
-      hours = '00';
-    }
-    if (modifier.toLowerCase() === 'pm') {
-      hours = parseInt(hours, 10) + 12;
-    }
-    return `${hours}:${minutes}`;
-  };
-
-  useEffect(() => {
-    if (!codeExecuted && isTimeSelected) {
-      const displayedStartTime = startTime ? convertTo24hr(startTime) : "";
-      const displayedEndTime = endTime ? convertTo24hr(endTime) : "";
-      const listItemTime = `${displayedStartTime} - ${displayedEndTime}`;
-      const inputTime = convertTo24hr(input.current.value.split(' - ')[0]) + ' - ' + convertTo24hr(input.current.value.split(' - ')[1]);
-      if (listItemTime !== inputTime) {
-        console.error(`El horario seleccionado (${listItemTime}) no coincide con el horario mostrado (${inputTime}).`);
-        setIsTimeSelected(false);
-      }
-      setCodeExecuted(true);
-      return;
-    }
-
-    const timeRegex = /(\d{1,2}(?::\d{2})?\s*(a\.?\s*m\.?|p\.?\s*m\.?)).*?(\d{1,2}(?::\d{2})?\s*(a\.?\s*m\.?|p\.?\s*m\.?))/i;
-    const match = transcript.match(timeRegex);
-    if (match && !messageSent) {
-      let startTime = convertTo24HourFormat(match[1]);
-      let endTime = convertTo24HourFormat(match[3]);
-      if (times.includes(startTime) && times.includes(endTime)) {
-        setStartTime(startTime);
-        setEndTime(endTime);
-        selectTime({ start: startTime, end: endTime });
-        console.log(`Horario seleccionado: ${startTime} - ${endTime}`);
-        input.current.value = `${startTime} - ${endTime}`;
-        setIsTimeSelected(true);
-        setTimeout(() => {
-          if (!messageSent && input.current.value.trim() !== '') {
-            sendMessage();
-            setMessageSent(true);
-            setTimeout(() => {
-              handleQuestionClick(currentQuestionIndex + 1);
-            }, 2000);
-          }
-        }, 2000);
-      } else {
-        let unavailableTimes = [];
-        if (!times.includes(startTime)) unavailableTimes.push(startTime);
-        if (!times.includes(endTime)) unavailableTimes.push(endTime);
-        console.error(`Los horarios ${unavailableTimes.join(' y ')} no están disponibles`);
-      }
-    }
-  }, [transcript, isTimeSelected, messageSent]);
-
   useEffect(() => {
     if (reservationCreated && !executed) {
       input.current.value = "reservacion creada";
       setTimeout(() => {
         sendMessage();
         setExecuted(true);
-      }, 5000);
+      }, 1000);
     }
   }, [reservationCreated]);
 
@@ -352,7 +291,7 @@ export const UI = ({ hidden, ...props }) => {
           sendMessage();
           setTimeout(() => {
             handleQuestionClick(currentQuestionIndex + 1);
-          }, 2000);
+          }, 9000);
         }
       }
     }
@@ -604,22 +543,44 @@ export const UI = ({ hidden, ...props }) => {
       return;
     }
 
+    if (selectedTimes.length !== 2) {
+      alert("Por favor, selecciona un horario antes de crear la reserva.");
+      return;
+    }
+
     const startDate = new Date(selectedDate);
-    const [startHours, startMinutes] = startTime.split(':');
+    const [startHours, startMinutes] = selectedTimes[0].split(':');
     startDate.setHours(startHours, startMinutes);
 
     const endDate = new Date(selectedDate);
-    const [endHours, endMinutes] = endTime.split(':');
+    const [endHours, endMinutes] = selectedTimes[1].split(':');
     endDate.setHours(endHours, endMinutes);
 
+    const toLocalISOString = (date) => {
+      const tzo = -date.getTimezoneOffset(),
+        dif = tzo >= 0 ? '+' : '-',
+        pad = (num) => {
+          const norm = Math.floor(Math.abs(num));
+          return (norm < 10 ? '0' : '') + norm;
+        };
+      return date.getFullYear() +
+        '-' + pad(date.getMonth() + 1) +
+        '-' + pad(date.getDate()) +
+        'T' + pad(date.getHours()) +
+        ':' + pad(date.getMinutes()) +
+        ':' + pad(date.getSeconds()) +
+        dif + pad(tzo / 60) +
+        ':' + pad(tzo % 60);
+    }
+
     const reservedEquipment = Object.entries(counts)
-      .filter(([equipment, count]) => count > 1)
+      .filter(([equipment, count]) => count > 0)
       .map(([equipment]) => equipmentIds[equipment]);
 
     const payload = {
       room_id: selectedRoomId,
-      start_date: startDate.toISOString().slice(0, 16).replace('T', ' '),
-      end_date: endDate.toISOString().slice(0, 16).replace('T', ' '),
+      start_date: toLocalISOString(startDate).slice(0, 16).replace('T', ' '),
+      end_date: toLocalISOString(endDate).slice(0, 16).replace('T', ' '),
       reserved_equipment: reservedEquipment,
       comments: "",
       status: "6614aaed6d294f5d44008695"
@@ -648,14 +609,14 @@ export const UI = ({ hidden, ...props }) => {
       sendMessage();
       setTimeout(() => {
         handleQuestionClick(currentQuestionIndex + 1);
-      }, 2000);
+      }, 9000);
     }
   }, [selectedCard]);
 
   useEffect(() => {
     if (!isButtonVisible) {
       input.current.value = "iniciar reservacion";
-      //sendMessage();
+      sendMessage();
     }
   }, [isButtonVisible]);
 
@@ -673,41 +634,6 @@ export const UI = ({ hidden, ...props }) => {
 
   const handleQuestionClick = (index) => {
     setCurrentQuestionIndex(index);
-  };
-
-  const selectTime = (time) => {
-    if (!startTime || (startTime && endTime)) {
-      setStartTime(time);
-      setEndTime("");
-    } else if (time > startTime && getDifferenceInHours(startTime, time) < 2) {
-      const endTime = addThirtyMinutes(time);
-      setEndTime(endTime);
-      const formattedTime = `${startTime} - ${endTime}`;
-      handleQuestionClick(currentQuestionIndex + 1);
-    }
-  };
-
-  const getDifferenceInHours = (startTime, endTime) => {
-    const start = new Date(`01/01/2007 ${startTime}`);
-    const end = new Date(`01/01/2007 ${endTime}`);
-    let diff = end - start;
-    let diffInHours = diff / 1000 / 60 / 60;
-    return diffInHours;
-  };
-
-  const addThirtyMinutes = (time) => {
-    const [hour, minutes] = time.split(":");
-    let newHour = parseInt(hour);
-    let newMinutes = parseInt(minutes);
-
-    newMinutes += 29;
-    if (newMinutes >= 60) {
-      newHour += 1;
-      newMinutes = 0;
-    }
-
-    return `${newHour < 10 ? "0" + newHour : newHour}:${newMinutes < 10 ? "0" + newMinutes : newMinutes
-      }`;
   };
 
   const handleMouseEnter = (index) => {
@@ -766,7 +692,7 @@ export const UI = ({ hidden, ...props }) => {
               )}
               {!isButtonVisible && (
                 // <div className={`${isVisible ? "flex" : "hidden"} items-center justify-center w-full h-full`}>
-                <div className={`flex items-center justify-center w-full h-full`}>
+                <div className={`hidden items-center justify-center w-full h-full`}>
                   <input
                     className={` w-7/12 h-2/6 placeholder:text-gray-800 placeholder:italic p-4 rounded-l-md bg-opacity-50 bg-white backdrop-blur-md`}
                     placeholder="Escribe..."
@@ -905,10 +831,9 @@ export const UI = ({ hidden, ...props }) => {
                         <ul className="list-disc list-inside">
                           <li>{cardNames[selectedCard] ? cardNames[selectedCard] : "Sin sala"}</li>
                           <li>
-                            {startTime || endTime
-                              ? `${startTime ? ` ${convertTo12hr(startTime)}` : ""} ${endTime ? `- ${convertTo12hr(endTime)}` : ""}`
-                              : "Sin horario"
-                            }
+                            {selectedTimes.length === 2 ?
+                              `${convertTo12Hour(selectedTimes[0])} - ${convertTo12Hour(selectedTimes[1])}`
+                              : 'Sin Horario'}
                           </li>
                           {Object.values(counts).some(count => count > 0) && (
                             <>
@@ -957,7 +882,7 @@ export const UI = ({ hidden, ...props }) => {
                                   setSelectedDate(date);
                                   setTimeout(() => {
                                     handleQuestionClick(currentQuestionIndex + 1);
-                                  }, 2000);
+                                  }, 9000);
                                   const formattedDate = date.toLocaleDateString('en-GB');
                                   input.current.value = formattedDate;
                                   sendMessage();
@@ -1020,41 +945,38 @@ export const UI = ({ hidden, ...props }) => {
                             );
                           case "Horario":
                             return (
-                              <div className="w-11/12 h-5/6 grid grid-cols-4 gap-2">
-                                {times.map((time, index) => {
-                                  let [hours, minutes] = time.split(':');
-                                  let period = +hours < 12 ? 'AM' : 'PM';
-                                  hours = +hours % 12 || 12;
-                                  let time12hr = `${hours}:${minutes} ${period}`;
+                              <div className="grid grid-cols-6 grid-rows-8 gap-2 w-11/12 h-5/6">
+                                {Array.from({ length: 48 }, (_, i) => {
+                                  const hour = Math.floor(i / 2);
+                                  const minute = i % 2 === 0 ? '00' : '30';
+                                  const period = hour < 12 || hour === 24 ? 'AM' : 'PM';
+                                  const time = `${hour === 0 || hour === 12 ? 12 : hour % 12}:${minute} ${period}`;
+                                  const time24 = `${hour.toString().padStart(2, '0')}:${minute}`;
+                                  const timeMinutes = timeToMinutes(time24);
+                                  const [startMinutes, endMinutes] = selectedTimes.map(timeToMinutes);
+                                  const isSelected = timeMinutes >= startMinutes && timeMinutes <= endMinutes;
                                   return (
                                     <button
-                                      key={index}
-                                      className={`p-1 ${time === startTime ||
-                                        time === endTime ||
-                                        (startTime && endTime && time > startTime && time < endTime)
-                                        ? "bg-blue-500 text-white rounded-md"
-                                        : "bg-gray-300 rounded-md hover:bg-blue-500 hover:text-white"
-                                        }`}
+                                      key={i + 1}
+                                      className={`m-1 border border-black rounded-xl shadow-lg text-sm whitespace-nowrap overflow-hidden text-black hover:bg-blue-500 hover:text-white transition-all duration-200 ease-in-out transform hover:scale-105 ${isSelected ? 'bg-blue-500 text-white animate-pulse border-2 border-fuchsia-500' : ''}`}
                                       onClick={() => {
-                                        if ((!startTime || time === startTime) || (startTime && endTime)) {
-                                          setStartTime(time);
-                                          setEndTime(null);
-                                        } else if (!endTime || time === endTime) {
-                                          setEndTime(time);
-                                          console.log(`${startTime} - ${time}`);
-                                          input.current.value = `${startTime} - ${time}`;
+                                        if (selectedButtons.length === 1) {
+                                          const selectedHour = Math.floor((selectedButtons[0] - 1) / 2);
+                                          const selectedMinute = (selectedButtons[0] - 1) % 2 === 0 ? '00' : '30';
+                                          const selectedTime24 = `${selectedHour.toString().padStart(2, '0')}:${selectedMinute}`;
+                                          input.current.value = `${selectedTime24} - ${time24}`;
+                                          setSelectedTimes([selectedTime24, time24]);
                                           sendMessage();
-                                          if (time !== startTime) {
-                                            setTimeout(() => {
-                                              handleQuestionClick(currentQuestionIndex + 1);
-                                            }, 2000);
-                                          }
+                                          setTimeout(() => {
+                                            handleQuestionClick(currentQuestionIndex + 1);
+                                          }, 11000);
+                                        } else {
+                                          setSelectedTimes([]);
                                         }
-                                        selectTime(time);
+                                        selectbotones(i + 1);
                                       }}
-                                      
                                     >
-                                      {time12hr}
+                                      {time}
                                     </button>
                                   );
                                 })}
