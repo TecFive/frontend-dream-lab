@@ -254,10 +254,8 @@ export const UI = ({ hidden, ...props }) => {
   useEffect(() => {
     if (reservationCreated && !executed) {
       input.current.value = "reservacion creada";
-      setTimeout(() => {
-        sendMessage();
-        setExecuted(true);
-      }, 1000);
+      sendMessage();
+      setExecuted(true);
     }
   }, [reservationCreated]);
 
