@@ -263,7 +263,7 @@ export const UI = ({ hidden, ...props }) => {
 
   const mandarMatricula = (e) => {
     e.preventDefault();
-    if (inputValue !== "A00830223" && inputValue !== "0005723140") {
+    if (inputValue !== "A00830223" && inputValue !== "A01630223") {
       setMatriculaError(true);
     } else {
       setMatriculaError(false);
@@ -273,7 +273,7 @@ export const UI = ({ hidden, ...props }) => {
   };
 
   useEffect(() => {
-    const matriculaRegex = /a00830223/i;
+    const matriculaRegex = /a01630223/i;
     const processedTranscript = transcript.replace(/\s+/g, '');
     const match = processedTranscript.match(matriculaRegex);
     if (match) {
@@ -707,8 +707,8 @@ export const UI = ({ hidden, ...props }) => {
                 </div>
               )}
               {!isButtonVisible && (
-                // <div className={`${isVisible ? "flex" : "hidden"} items-center justify-center w-full h-full`}>
-                <div className={`hidden items-center justify-center w-full h-full`}>
+                // <div className={`hidden items-center justify-center w-full h-full`}>
+                <div className={`${isVisible ? "flex" : "hidden"} items-center justify-center w-full h-full`}>
                   <input
                     className={` w-7/12 h-2/6 placeholder:text-gray-800 placeholder:italic p-4 rounded-l-md bg-opacity-50 bg-white backdrop-blur-md`}
                     placeholder="Escribe..."
@@ -736,7 +736,7 @@ export const UI = ({ hidden, ...props }) => {
                 )}
               </div>
               <div className="flex items-start justify-center w-full h-2/6">
-                <div className="flex w-2/12 h-5/6">
+                <div className="flex w-1/12 h-3/6">
                   <button
                     onClick={() => {
                       setIsClicked(true);
